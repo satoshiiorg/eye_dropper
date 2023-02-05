@@ -54,13 +54,16 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            // 選択された色見本の表示
             if(pickedColor.value != null)
               CustomPaint(
                   size: const Size(50, 50),
                   painter: PickedPainter(pickedColor.value!),
               ),
+            // 選択された色のカラーコード表示
             if(pickedColor.value != null)
               Text('ARGB=${pickedColor.value}'),
+            // 画像表示領域
             Container(
               alignment: Alignment.center,
               // TODO 画像表示領域のサイズ設定はもうちょっと考える
@@ -68,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
               height: MediaQuery.of(context).size.height * imageAreaHeightRatio,
               child: Stack(
                 children: [
+                  // 画像を表示してタップ時の挙動を設定
                   if(imageBytes.value != null)
                     GestureDetector(
                       // TODO onPanUpdate にしてなめらかに取れるようにする？
@@ -75,6 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       onTapDown: pickColor,
                       child: Image.memory(imageBytes.value!),
                     ),
+                  // タップされた位置に目印を付ける
                   if(tapPoint.value != null)
                     Positioned(
                       // タップ位置を開始点(0, 0)でなく中央(5, 5)にする
@@ -110,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// TapDownDetailsで指定された座標をtapPointにセットし、色をpickedColorにセットする
   // TODO 色のセットと座標のセットは別々のメソッド内でやることのような気がする
-  void pickColor(TapDownDetails details) async {
+  void pickColor(TapDownDetails details) {
     // 一応未知のエンコード形式ではnullを返すと思われるが省略
     img.Image image = img.decodeImage(imageBytes.value!)!;
 
@@ -134,8 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // Offsetはイミュータブルと記載があるのでコピーする必要はない
     tapPoint.value = details.localPosition;
 
-    setState(() {
-    });
+    setState(() {});
   }
 }
 
@@ -146,6 +150,7 @@ class PickedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 選択された色で塗りつぶした四角を表示
     Paint p = Paint();
     p.color = color;
     p.style = PaintingStyle.fill;
@@ -161,6 +166,7 @@ class PickedPainter extends CustomPainter {
 class TapPointPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
+    // 赤い四角で囲う
     Paint p = Paint();
     p.color = const Color.fromARGB(255, 255, 0, 0);
     p.style = PaintingStyle.stroke;
