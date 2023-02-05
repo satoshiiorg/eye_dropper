@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'dart:math';
 
 void main() {
   runApp(const MyApp());
@@ -38,6 +39,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final tapPoint = ValueNotifier<Offset?>(null);
   /// 選択されたピクセルのカラーコード
   final pickedColor = ValueNotifier<Color?>(null);
+  /// 画像の表示領域の画面サイズに対する比率(横)
+  static const imageAreaWidthRatio = 0.95;
+  /// 画像の表示領域の画面サイズに対する比率(縦)
+  static const imageAreaHeightRatio = 0.65;
 
   @override
   Widget build(BuildContext context) {
@@ -56,29 +61,31 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             if(pickedColor.value != null)
               Text('ARGB=${pickedColor.value}'),
-            Stack(
-              children: [
-                // TODO どうもchildrenが1項目しかないタイミングがあると落ちるっぽいのでダミーのテキストを置いてみる→なくてもいける？
-                // const Text(''),
-                // このifは必要 もしくは Image.asset('assets/images/sample.jpg') にする？
-                if(imageBytes.value != null)
-                  GestureDetector(
-                    // TODO onPanUpdate にする？ この辺参考になりそう https://note.com/hatchoutschool/n/n1310e5172251
-                    onTapDown: pickColor,
-                    // FIXME 縦が溢れる場合がある bottom overflowed by xxx pixels
-                    // TODO 横幅もしくは縦幅が画面(一定サイズ)に入り切らない時は縮小する
-                    child: Image.memory(imageBytes.value!),
-                  ),
-                if(tapPoint.value != null)
-                  Positioned(
-                    // タップ位置を開始点(0, 0)でなく中央(5, 5)にする
-                    left: tapPoint.value!.dx - 5,
-                    top: tapPoint.value!.dy - 5,
-                    child: CustomPaint(
-                      painter: TapPointPainter(),
+            Container(
+              alignment: Alignment.center,
+              // TODO 画像表示領域のサイズ設定はもうちょっと考える
+              width: MediaQuery.of(context).size.width * imageAreaWidthRatio,
+              height: MediaQuery.of(context).size.height * imageAreaHeightRatio,
+              child: Stack(
+                children: [
+                  if(imageBytes.value != null)
+                    GestureDetector(
+                      // TODO onPanUpdate にしてなめらかに取れるようにする？
+                      // この辺参考になりそう https://note.com/hatchoutschool/n/n1310e5172251
+                      onTapDown: pickColor,
+                      child: Image.memory(imageBytes.value!),
                     ),
-                  ),
-              ],
+                  if(tapPoint.value != null)
+                    Positioned(
+                      // タップ位置を開始点(0, 0)でなく中央(5, 5)にする
+                      left: tapPoint.value!.dx - 5,
+                      top: tapPoint.value!.dy - 5,
+                      child: CustomPaint(
+                        painter: TapPointPainter(),
+                      ),
+                    ),
+                ],
+              ),
             ),
             ElevatedButton(
               onPressed: selectImage,
@@ -102,26 +109,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   /// TapDownDetailsで指定された座標をtapPointにセットし、色をpickedColorにセットする
+  // TODO 色のセットと座標のセットは別々のメソッド内でやることのような気がする
   void pickColor(TapDownDetails details) async {
     // 一応未知のエンコード形式ではnullを返すと思われるが省略
     img.Image image = img.decodeImage(imageBytes.value!)!;
 
-    // 画面の横幅
-    double width = MediaQuery.of(context).size.width;
-    // 画像の横幅が画面の横幅より大きい場合の縮小率
-    double ratio = width < image.width ? (image.width / width) : 1;
+    // 画像の表示領域のサイズ
+    double width = MediaQuery.of(context).size.width * imageAreaWidthRatio;
+    double height = MediaQuery.of(context).size.height * imageAreaHeightRatio;
+
+    // 画像サイズが表示領域のサイズより大きい場合の縮小率
+    double widthRatio = width < image.width ? (width / image.width) : 1;
+    double heightRatio = height < image.height ? (height / image.height) : 1;
+    double ratio = min(widthRatio, heightRatio);
+
     // タップ位置を画像の対応する位置に変換
-    double x =  details.localPosition.dx * ratio;
-    double y =  details.localPosition.dy * ratio;
+    double x =  details.localPosition.dx / ratio;
+    double y =  details.localPosition.dy / ratio;
+
     // 色を取得してセット
     img.Pixel pixel = image.getPixel(x.toInt(), y.toInt());
     pickedColor.value = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-    print('dx=${details.localPosition.dx}, dy=${details.localPosition.dy}');
-    print('x=${x}, y=${y}');
-    print('a=${pixel.a}, r=${pixel.r}, g=${pixel.g}, b=${pixel.b}');
 
     // Offsetはイミュータブルと記載があるのでコピーする必要はない
-    // 色のセットと座標のセットは別々のメソッド内でやることかも
     tapPoint.value = details.localPosition;
 
     setState(() {
