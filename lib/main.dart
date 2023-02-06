@@ -40,9 +40,8 @@ class _MyHomePageState extends State<MyHomePage> {
   /// 画像のバイト列
   final _imageBytes = ValueNotifier<Uint8List?>(null);
   /// 選択された座標と色
-  final _offsetColor = ValueNotifier<OffsetColor>(OffsetColor(const Offset(0, 0), Colors.white));
+  final _offsetColor = ValueNotifier<OffsetColor>(OffsetColor(null, null));
 
-  // TODO そもそもUIとしてよくないのでデフォルト値を設定するようにする？
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,18 +52,18 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            // _offsetColorを監視して再描画する
             ValueListenableBuilder(
               valueListenable: _offsetColor,
               builder: (_, offsetColor, __) => Column(
                 children: [
-                  // 選択された色見本の表示
+                  // 選択された色見本を表示
                   CustomPaint(
                     size: const Size(50, 50),
-                    painter: PickedPainter(_offsetColor.value.color),
+                    painter: PickedPainter(offsetColor.color),
                   ),
-                  // 選択された色のカラーコード表示
-                  // TODO 初期表示でFFFFFFになってしまうのはどうする？
-                  Text('ARGB=${_offsetColor.value.color}'),
+                  // 選択された色のカラーコードを表示
+                  Text('ARGB=${offsetColor.color ?? ''}'),
                 ],
               ),
             ),
@@ -76,36 +75,40 @@ class _MyHomePageState extends State<MyHomePage> {
               height: MediaQuery.of(context).size.height * imageAreaHeightRatio,
               child: Stack(
                 children: [
-                  // 画像を表示してタップ時の挙動を設定
+                  // 選択された画像を描画する
                   ValueListenableBuilder(
                     valueListenable: _imageBytes,
                     builder: (_, imageBytes, __) {
                       // 初期表示時は空
                       if(imageBytes == null) {
-                        return const Center();
+                        return const SizedBox.shrink();
                       }
+                      // 画像を表示してタップ時の挙動を設定
                       return GestureDetector(
                         // TODO onPanUpdate にしてなめらかに取れるようにする？
-                        // この辺参考になりそう https://note.com/hatchoutschool/n/n1310e5172251
                         onTapDown: pickColor,
                         child: Image.memory(imageBytes),
                       );
                     },
                   ),
                   // タップされた位置に目印を付ける
-                  // TODO 初期表示で左上になってしまうのはどうする？別によい？
-                  if(_offsetColor.value != null)
-                    ValueListenableBuilder(
-                      valueListenable: _offsetColor,
-                      builder: (_, offsetColor, __) => Positioned(
-                        // タップ位置を開始点(0, 0)でなく中央(6, 6)にする
-                        left: offsetColor.offset.dx - 6,
-                        top: offsetColor.offset.dy - 6,
+                  ValueListenableBuilder(
+                    valueListenable: _offsetColor,
+                    builder: (_, offsetColor, __) {
+                      // 初期表示時は非表示
+                      if(offsetColor.offset == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Positioned(
+                        // タップ位置が開始点(0, 0)でなく中央になるようにする
+                        left: offsetColor.offset!.dx - TapPointPainter.centerOffset,
+                        top: offsetColor.offset!.dy - TapPointPainter.centerOffset,
                         child: CustomPaint(
                           painter: TapPointPainter(),
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -130,11 +133,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorにセットする
-  // 色のセットと座標のセットは別々のメソッド内でやることのような気がする
-  // ↑むしろ同時に扱う必要があるものだから1オブジェクトにまとめるべき？
-  // ↑別々のタイミングで再描画されても困るので1オブジェクトにまとめた
   void pickColor(TapDownDetails details) {
-    // 一応未知のエンコード形式ではnullを返すと思われるが省略
+    // 一応未知のエンコード形式ではnullを返すと思われるがエラー処理は省略
     img.Image image = img.decodeImage(_imageBytes.value!)!;
 
     // 画像の表示領域のサイズ
@@ -153,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // 座標と色を取得してセット
     img.Pixel pixel = image.getPixel(x.toInt(), y.toInt());
     Color color = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-    // Offsetはイミュータブルと記載があるのでコピーする必要はない
+    // Offsetはイミュータブルなのでコピーする必要はない
     Offset offset = details.localPosition;
     _offsetColor.value = OffsetColor(offset, color);
   }
@@ -161,22 +161,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
 /// 座標と色のペア
 class OffsetColor {
-  final Offset offset;
-  final Color color;
+  final Offset? offset;
+  final Color? color;
   OffsetColor(this.offset, this.color);
 }
 
 /// 吸い取った色の表示領域
 class PickedPainter extends CustomPainter {
   static const double rectSize = 50;
-  Color color;
+  Color? color;
   PickedPainter(this.color);
 
   @override
   void paint(Canvas canvas, Size size) {
     // 選択された色で塗りつぶした四角を表示
     Paint p = Paint();
-    p.color = color;
+    p.color = color ?? Colors.white;
     p.style = PaintingStyle.fill;
     Rect r = const Rect.fromLTWH(0, 0, rectSize, rectSize);
     canvas.drawRect(r, p);
@@ -188,14 +188,19 @@ class PickedPainter extends CustomPainter {
 
 /// 吸い取った場所の表示領域
 class TapPointPainter extends CustomPainter {
+  /// 囲みの幅
   static const double rectSize = 11;
+  /// 囲みの太さ
+  static const double strokeWidth = 2;
+  /// 囲みの中心点
+  static final int centerOffset = (rectSize / 2 + strokeWidth / 2).ceil();
   @override
   void paint(Canvas canvas, Size size) {
     // 赤い四角で囲う
     Paint p = Paint();
-    p.color = const Color.fromARGB(255, 255, 0, 0);
+    p.color = Colors.red;
     p.style = PaintingStyle.stroke;
-    p.strokeWidth = 2;
+    p.strokeWidth = strokeWidth;
     Rect r = const Rect.fromLTWH(0, 0, rectSize, rectSize);
     canvas.drawRect(r, p);
   }
