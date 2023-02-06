@@ -33,17 +33,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  /// 画像のバイト列
-  final imageBytes = ValueNotifier<Uint8List?>(null);
-  /// 選択された座標
-  final tapPoint = ValueNotifier<Offset?>(null);
-  /// 選択されたピクセルのカラーコード
-  final pickedColor = ValueNotifier<Color?>(null);
   /// 画像の表示領域の画面サイズに対する比率(横)
   static const imageAreaWidthRatio = 0.95;
   /// 画像の表示領域の画面サイズに対する比率(縦)
   static const imageAreaHeightRatio = 0.65;
+  /// 画像のバイト列
+  final _imageBytes = ValueNotifier<Uint8List?>(null);
+  /// 選択された座標と色
+  final _offsetColor = ValueNotifier<OffsetColor>(OffsetColor(const Offset(0, 0), Colors.white));
 
+  // TODO そもそもUIとしてよくないのでデフォルト値を設定するようにする？
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,15 +53,21 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            // 選択された色見本の表示
-            if(pickedColor.value != null)
-              CustomPaint(
-                  size: const Size(50, 50),
-                  painter: PickedPainter(pickedColor.value!),
+            ValueListenableBuilder(
+              valueListenable: _offsetColor,
+              builder: (_, offsetColor, __) => Column(
+                children: [
+                  // 選択された色見本の表示
+                  CustomPaint(
+                    size: const Size(50, 50),
+                    painter: PickedPainter(_offsetColor.value.color),
+                  ),
+                  // 選択された色のカラーコード表示
+                  // TODO 初期表示でFFFFFFになってしまうのはどうする？
+                  Text('ARGB=${_offsetColor.value.color}'),
+                ],
               ),
-            // 選択された色のカラーコード表示
-            if(pickedColor.value != null)
-              Text('ARGB=${pickedColor.value}'),
+            ),
             // 画像表示領域
             Container(
               alignment: Alignment.center,
@@ -72,21 +77,33 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Stack(
                 children: [
                   // 画像を表示してタップ時の挙動を設定
-                  if(imageBytes.value != null)
-                    GestureDetector(
-                      // TODO onPanUpdate にしてなめらかに取れるようにする？
-                      // この辺参考になりそう https://note.com/hatchoutschool/n/n1310e5172251
-                      onTapDown: pickColor,
-                      child: Image.memory(imageBytes.value!),
-                    ),
+                  ValueListenableBuilder(
+                    valueListenable: _imageBytes,
+                    builder: (_, imageBytes, __) {
+                      // 初期表示時は空
+                      if(imageBytes == null) {
+                        return const Center();
+                      }
+                      return GestureDetector(
+                        // TODO onPanUpdate にしてなめらかに取れるようにする？
+                        // この辺参考になりそう https://note.com/hatchoutschool/n/n1310e5172251
+                        onTapDown: pickColor,
+                        child: Image.memory(imageBytes),
+                      );
+                    },
+                  ),
                   // タップされた位置に目印を付ける
-                  if(tapPoint.value != null)
-                    Positioned(
-                      // タップ位置を開始点(0, 0)でなく中央(5, 5)にする
-                      left: tapPoint.value!.dx - 5,
-                      top: tapPoint.value!.dy - 5,
-                      child: CustomPaint(
-                        painter: TapPointPainter(),
+                  // TODO 初期表示で左上になってしまうのはどうする？別によい？
+                  if(_offsetColor.value != null)
+                    ValueListenableBuilder(
+                      valueListenable: _offsetColor,
+                      builder: (_, offsetColor, __) => Positioned(
+                        // タップ位置を開始点(0, 0)でなく中央(6, 6)にする
+                        left: offsetColor.offset.dx - 6,
+                        top: offsetColor.offset.dy - 6,
+                        child: CustomPaint(
+                          painter: TapPointPainter(),
+                        ),
                       ),
                     ),
                 ],
@@ -109,15 +126,16 @@ class _MyHomePageState extends State<MyHomePage> {
     if(image == null) {
       return;
     }
-    imageBytes.value = await image.readAsBytes();
-    setState(() {});
+    _imageBytes.value = await image.readAsBytes();
   }
 
-  /// TapDownDetailsで指定された座標をtapPointにセットし、色をpickedColorにセットする
-  // TODO 色のセットと座標のセットは別々のメソッド内でやることのような気がする
+  /// TapDownDetailsで指定された座標と色をoffsetColorにセットする
+  // 色のセットと座標のセットは別々のメソッド内でやることのような気がする
+  // ↑むしろ同時に扱う必要があるものだから1オブジェクトにまとめるべき？
+  // ↑別々のタイミングで再描画されても困るので1オブジェクトにまとめた
   void pickColor(TapDownDetails details) {
     // 一応未知のエンコード形式ではnullを返すと思われるが省略
-    img.Image image = img.decodeImage(imageBytes.value!)!;
+    img.Image image = img.decodeImage(_imageBytes.value!)!;
 
     // 画像の表示領域のサイズ
     double width = MediaQuery.of(context).size.width * imageAreaWidthRatio;
@@ -132,19 +150,25 @@ class _MyHomePageState extends State<MyHomePage> {
     double x =  details.localPosition.dx / ratio;
     double y =  details.localPosition.dy / ratio;
 
-    // 色を取得してセット
+    // 座標と色を取得してセット
     img.Pixel pixel = image.getPixel(x.toInt(), y.toInt());
-    pickedColor.value = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-
+    Color color = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
     // Offsetはイミュータブルと記載があるのでコピーする必要はない
-    tapPoint.value = details.localPosition;
-
-    setState(() {});
+    Offset offset = details.localPosition;
+    _offsetColor.value = OffsetColor(offset, color);
   }
+}
+
+/// 座標と色のペア
+class OffsetColor {
+  final Offset offset;
+  final Color color;
+  OffsetColor(this.offset, this.color);
 }
 
 /// 吸い取った色の表示領域
 class PickedPainter extends CustomPainter {
+  static const double rectSize = 50;
   Color color;
   PickedPainter(this.color);
 
@@ -154,7 +178,7 @@ class PickedPainter extends CustomPainter {
     Paint p = Paint();
     p.color = color;
     p.style = PaintingStyle.fill;
-    Rect r = const Rect.fromLTWH(0, 0, 50, 50);
+    Rect r = const Rect.fromLTWH(0, 0, rectSize, rectSize);
     canvas.drawRect(r, p);
   }
 
@@ -164,6 +188,7 @@ class PickedPainter extends CustomPainter {
 
 /// 吸い取った場所の表示領域
 class TapPointPainter extends CustomPainter {
+  static const double rectSize = 11;
   @override
   void paint(Canvas canvas, Size size) {
     // 赤い四角で囲う
@@ -171,7 +196,7 @@ class TapPointPainter extends CustomPainter {
     p.color = const Color.fromARGB(255, 255, 0, 0);
     p.style = PaintingStyle.stroke;
     p.strokeWidth = 2;
-    Rect r = const Rect.fromLTWH(0, 0, 10, 10);
+    Rect r = const Rect.fromLTWH(0, 0, rectSize, rectSize);
     canvas.drawRect(r, p);
   }
 
