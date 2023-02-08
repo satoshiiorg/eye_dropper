@@ -3,16 +3,22 @@ import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'dart:math';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// 画像のバイト列
+final imageProvider = StateProvider<Uint8List?>((ref) => null);
+/// 選択された座標と色
+final offsetColorProvider = StateProvider<OffsetColor>((ref) => OffsetColor(null, null));
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'スポイトツール',
       theme: ThemeData(
@@ -23,32 +29,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-// TODO 横画面にした時ボタン見切れる
-class _MyHomePageState extends State<MyHomePage> {
+// TODO 横画面にした時ボタンが見切れる
+class MyHomePageState extends ConsumerState<MyHomePage> {
   /// 画像の表示領域の画面サイズに対する比率(横)
   static const imageAreaWidthRatio = 0.95;
   /// 画像の表示領域の画面サイズに対する比率(縦)
   static const imageAreaHeightRatio = 0.65;
-  /// 画像のバイト列
-  final _imageBytes = ValueNotifier<Uint8List?>(null);
-  /// 選択された座標と色
-  final _offsetColor = ValueNotifier<OffsetColor>(OffsetColor(null, null));
   // このあたりはごちゃごちゃするが pickColor() 内で同じ処理が複数回走らないようプロパティにする
+  // できれば imageProvider と _imgImage くらいは一本化したい
+  /// 画像のimg.Image表現
+  late img.Image _imgImage;
   /// 画像の表示領域の横幅
   late double _imageAreWidth;
   /// 画像の表示領域の縦幅
   late double _imageAreHeight;
-  /// 画像のimg.Image表現
-  late img.Image _imgImage;
   /// 画像の縮小率
   late double _imageRatio;
 
@@ -69,20 +72,16 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // _offsetColorを監視して再描画する
-            ValueListenableBuilder(
-              valueListenable: _offsetColor,
-              builder: (_, offsetColor, __) => Column(
-                children: [
-                  // 選択された色見本を表示
-                  CustomPaint(
-                    size: const Size(50, 50),
-                    painter: PickedPainter(offsetColor.color),
-                  ),
-                  // 選択された色のカラーコードを表示
-                  Text('ARGB=${offsetColor.color ?? ''}'),
-                ],
-              ),
+            Column(
+              children: [
+                // 選択された色見本を表示
+                CustomPaint(
+                  size: const Size(50, 50),
+                  painter: PickedPainter(ref.watch(offsetColorProvider).color),
+                ),
+                // 選択された色のカラーコードを表示
+                Text('ARGB=${ref.watch(offsetColorProvider).color ?? ''}'),
+              ],
             ),
             // 画像表示領域
             Container(
@@ -91,40 +90,23 @@ class _MyHomePageState extends State<MyHomePage> {
               height: _imageAreHeight,
               child: Stack(
                 children: [
-                  // 選択された画像を描画する
-                  ValueListenableBuilder(
-                    valueListenable: _imageBytes,
-                    builder: (_, imageBytes, __) {
-                      // 初期表示時は空
-                      if(imageBytes == null) {
-                        return const SizedBox.shrink();
-                      }
-                      // 画像を表示してタップ時の挙動を設定
-                      return GestureDetector(
-                        onPanStart: pickColor,
-                        onPanUpdate: pickColor,
-                        child: Image.memory(imageBytes),
-                      );
-                    },
-                  ),
+                  // 画像を表示してタップ時の挙動を設定
+                  if(ref.watch(imageProvider) != null)
+                    GestureDetector(
+                      onPanStart: pickColor,
+                      onPanUpdate: pickColor,
+                      child: Image.memory(ref.watch(imageProvider)!),
+                    ),
                   // タップされた位置に目印を付ける
-                  ValueListenableBuilder(
-                    valueListenable: _offsetColor,
-                    builder: (_, offsetColor, __) {
-                      // 初期表示時は非表示
-                      if(offsetColor.offset == null) {
-                        return const SizedBox.shrink();
-                      }
-                      return Positioned(
-                        // タップ位置が開始点(0, 0)でなく中央になるようにする
-                        left: offsetColor.offset!.dx - TapPointPainter.centerOffset,
-                        top: offsetColor.offset!.dy - TapPointPainter.centerOffset,
-                        child: CustomPaint(
-                          painter: TapPointPainter(),
-                        ),
-                      );
-                    },
-                  ),
+                  if(ref.watch(offsetColorProvider).offset != null)
+                    Positioned(
+                      // タップ位置が開始点(0, 0)でなく中央になるようにする
+                      left: ref.watch(offsetColorProvider).offset!.dx - TapPointPainter.centerOffset,
+                      top: ref.watch(offsetColorProvider).offset!.dy - TapPointPainter.centerOffset,
+                      child: CustomPaint(
+                        painter: TapPointPainter(),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -138,7 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// カメラロールから画像を選択し _imageBytes と _imgImage にセット
+  /// カメラロールから画像を選択し imageProvider と _imgImage にセット
   /// 同時に _imageRatio もセットする
   void selectImage() async {
     final ImagePicker picker = ImagePicker();
@@ -155,10 +137,10 @@ class _MyHomePageState extends State<MyHomePage> {
     double heightRatio = _imageAreHeight < _imgImage.height ? (_imageAreHeight / _imgImage.height) : 1;
     _imageRatio = min(widthRatio, heightRatio);
 
-    _imageBytes.value = bytes;
+    ref.read(imageProvider.notifier).state = bytes;
   }
 
-  /// TapDownDetailsで指定された座標と色をoffsetColorにセットする
+  /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
   /// 引数のdetailsはGestureDragStartCallbackまたはGestureDragUpdateCallback
   void pickColor(details) {
     // タップ位置を画像の対応する位置に変換
@@ -170,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Color color = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
     // Offsetはイミュータブルなのでコピーする必要はない
     Offset offset = details.localPosition;
-    _offsetColor.value = OffsetColor(offset, color);
+    ref.read(offsetColorProvider.notifier).state = OffsetColor(offset, color);
   }
 }
 
@@ -206,7 +188,7 @@ class TapPointPainter extends CustomPainter {
   /// 囲みの幅
   static const double rectSize = 11;
   /// 囲みの太さ
-  static const double strokeWidth = 7;
+  static const double strokeWidth = 2;
   /// 囲みの中心点
   static const double centerOffset = rectSize / 2;
   @override
