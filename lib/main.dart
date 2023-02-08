@@ -32,6 +32,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// TODO 横画面にした時ボタン見切れる
 class _MyHomePageState extends State<MyHomePage> {
   /// 画像の表示領域の画面サイズに対する比率(横)
   static const imageAreaWidthRatio = 0.95;
@@ -205,9 +206,9 @@ class TapPointPainter extends CustomPainter {
   /// 囲みの幅
   static const double rectSize = 11;
   /// 囲みの太さ
-  static const double strokeWidth = 2;
+  static const double strokeWidth = 7;
   /// 囲みの中心点
-  static final int centerOffset = (rectSize / 2 + strokeWidth / 2).ceil();
+  static const double centerOffset = rectSize / 2;
   @override
   void paint(Canvas canvas, Size size) {
     // 赤い四角で囲う
