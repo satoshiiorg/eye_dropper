@@ -5,8 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// 画像のバイト列
-final imageProvider = StateProvider<Uint8List?>((ref) => null);
+/// 画像表示領域のサイズ
+final imageAreaSizeProvider = StateProvider<Size>((ref) => const Size(0, 0));
+/// 画像関連の情報
+final imageProvider = StateProvider<MyImage?>((ref) => null);
 /// 選択された座標と色
 final offsetColorProvider = StateProvider<OffsetColor>((ref) => OffsetColor(null, null));
 
@@ -15,6 +17,11 @@ void main() {
 }
 
 class MyApp extends ConsumerWidget {
+  /// 画像の表示領域の画面サイズに対する比率(横)
+  static const imageAreaWidthRatio = 0.95;
+  /// 画像の表示領域の画面サイズに対する比率(縦)
+  static const imageAreaHeightRatio = 0.65;
+
   const MyApp({super.key});
 
   @override
@@ -24,49 +31,35 @@ class MyApp extends ConsumerWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'スポイトツール'),
+      home: Builder(builder: (context) {
+        Size fullSize = MediaQuery.of(context).size;
+        Size imageAreaSize = Size(
+            fullSize.width * imageAreaWidthRatio,
+            fullSize.height * imageAreaHeightRatio);
+        return ProviderScope(
+          overrides: [
+            imageAreaSizeProvider.overrideWith((ref) => imageAreaSize),
+          ],
+          child: const MyHomePage(title: 'スポイトツール'),
+        );
+      }),
     );
   }
 }
 
-class MyHomePage extends ConsumerStatefulWidget {
+class MyHomePage extends ConsumerWidget {
   const MyHomePage({super.key, required this.title});
 
   final String title;
 
   @override
-  MyHomePageState createState() => MyHomePageState();
-}
-
-// TODO 横画面にした時ボタンが見切れる
-class MyHomePageState extends ConsumerState<MyHomePage> {
-  /// 画像の表示領域の画面サイズに対する比率(横)
-  static const imageAreaWidthRatio = 0.95;
-  /// 画像の表示領域の画面サイズに対する比率(縦)
-  static const imageAreaHeightRatio = 0.65;
-  // このあたりはごちゃごちゃするが pickColor() 内で同じ処理が複数回走らないようプロパティにする
-  // できれば imageProvider と _imgImage くらいは一本化したい
-  /// 画像のimg.Image表現
-  late img.Image _imgImage;
-  /// 画像の表示領域の横幅
-  late double _imageAreWidth;
-  /// 画像の表示領域の縦幅
-  late double _imageAreHeight;
-  /// 画像の縮小率
-  late double _imageRatio;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _imageAreWidth = MediaQuery.of(context).size.width * imageAreaWidthRatio;
-    _imageAreHeight = MediaQuery.of(context).size.height * imageAreaHeightRatio;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    Size imageAreaSize = ref.watch(imageAreaSizeProvider);
+    MyImage? image = ref.watch(imageProvider);
+    OffsetColor offsetColor = ref.watch(offsetColorProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(title),
       ),
       body: Center(
         child: Column(
@@ -77,32 +70,32 @@ class MyHomePageState extends ConsumerState<MyHomePage> {
                 // 選択された色見本を表示
                 CustomPaint(
                   size: const Size(50, 50),
-                  painter: PickedPainter(ref.watch(offsetColorProvider).color),
+                  painter: PickedPainter(offsetColor.color),
                 ),
                 // 選択された色のカラーコードを表示
-                Text('ARGB=${ref.watch(offsetColorProvider).color ?? ''}'),
+                Text('ARGB=${offsetColor.color ?? ''}'),
               ],
             ),
             // 画像表示領域
             Container(
               alignment: Alignment.center,
-              width: _imageAreWidth,
-              height: _imageAreHeight,
+              width: imageAreaSize.width,
+              height: imageAreaSize.height,
               child: Stack(
                 children: [
                   // 画像を表示してタップ時の挙動を設定
-                  if(ref.watch(imageProvider) != null)
+                  if(image != null)
                     GestureDetector(
-                      onPanStart: pickColor,
-                      onPanUpdate: pickColor,
-                      child: Image.memory(ref.watch(imageProvider)!),
+                      onPanStart: (details) => pickColor(details, ref),
+                      onPanUpdate: (details) => pickColor(details, ref),
+                      child: Image.memory(image.bytes),
                     ),
                   // タップされた位置に目印を付ける
-                  if(ref.watch(offsetColorProvider).offset != null)
+                  if(offsetColor.offset != null)
                     Positioned(
                       // タップ位置が開始点(0, 0)でなく中央になるようにする
-                      left: ref.watch(offsetColorProvider).offset!.dx - TapPointPainter.centerOffset,
-                      top: ref.watch(offsetColorProvider).offset!.dy - TapPointPainter.centerOffset,
+                      left: offsetColor.offset!.dx - TapPointPainter.centerOffset,
+                      top: offsetColor.offset!.dy - TapPointPainter.centerOffset,
                       child: CustomPaint(
                         painter: TapPointPainter(),
                       ),
@@ -111,7 +104,7 @@ class MyHomePageState extends ConsumerState<MyHomePage> {
               ),
             ),
             ElevatedButton(
-              onPressed: selectImage,
+              onPressed: () => selectImage(ref),
               child: const Text('画像を選択'),
             ),
           ],
@@ -122,37 +115,55 @@ class MyHomePageState extends ConsumerState<MyHomePage> {
 
   /// カメラロールから画像を選択し imageProvider と _imgImage にセット
   /// 同時に _imageRatio もセットする
-  void selectImage() async {
+  void selectImage(WidgetRef ref) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if(image == null) {
       return;
     }
     Uint8List bytes = await image.readAsBytes();
-    // 一応未知のエンコード形式ではnullを返すと思われるがエラー処理は省略
-    _imgImage = img.decodeImage(bytes)!;
-
-    // 画像サイズが表示領域のサイズより大きい場合の縮小率
-    double widthRatio = _imageAreWidth < _imgImage.width ? (_imageAreWidth / _imgImage.width) : 1;
-    double heightRatio = _imageAreHeight < _imgImage.height ? (_imageAreHeight / _imgImage.height) : 1;
-    _imageRatio = min(widthRatio, heightRatio);
-
-    ref.read(imageProvider.notifier).state = bytes;
+    Size imageArea = ref.watch(imageAreaSizeProvider)!;
+    ref.read(imageProvider.notifier).state = MyImage(bytes, imageArea);
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
-  /// 引数のdetailsはGestureDragStartCallbackまたはGestureDragUpdateCallback
-  void pickColor(details) {
+  /// 引数のdetailsはDragStartDetailsまたはDragUpdateDetails
+  void pickColor(details, WidgetRef ref) {
+    MyImage image = ref.watch(imageProvider)!;
     // タップ位置を画像の対応する位置に変換
-    int x =  details.localPosition.dx ~/ _imageRatio;
-    int y =  details.localPosition.dy ~/ _imageRatio;
+    double dx = details.localPosition.dx / image.ratio;
+    double dy = details.localPosition.dy / image.ratio;
+
+    // ドラッグしたまま画像の範囲外に行くとRangeErrorになるので対策
+    if(dx < 0 || image.imgImage.width <= dx || dy < 0 || image.imgImage.height <= dy) {
+      return;
+    }
 
     // 座標と色を取得してセット
-    img.Pixel pixel = _imgImage.getPixel(x, y);
-    Color color = Color.fromARGB(pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
+    img.Pixel pixel = image.imgImage.getPixel(dx.toInt(), dy.toInt());
+    Color color = Color.fromARGB(
+        pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
     // Offsetはイミュータブルなのでコピーする必要はない
     Offset offset = details.localPosition;
     ref.read(offsetColorProvider.notifier).state = OffsetColor(offset, color);
+  }
+}
+
+/// 画像関連のデータ
+class MyImage {
+  /// 画像のバイト列表現
+  final Uint8List bytes;
+  /// 画像のimg.Image表現
+  final img.Image imgImage;
+  /// 画像の縮小率
+  late final double ratio;
+
+  // 一応未知のエンコード形式ではnullを返すと思われるがエラー処理は省略
+  MyImage(this.bytes, imageArea) : imgImage = img.decodeImage(bytes)! {
+    // 一時変数を使わなければlateにする必要ないが見づらいので
+    double widthRatio = imageArea.width < imgImage.width ? (imageArea.width / imgImage.width) : 1;
+    double heightRatio = imageArea.height < imgImage.height ? (imageArea.height / imgImage.height) : 1;
+    ratio = min(widthRatio, heightRatio);
   }
 }
 
