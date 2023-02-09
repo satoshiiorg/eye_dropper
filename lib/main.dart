@@ -134,13 +134,12 @@ class MyHomePage extends ConsumerWidget {
     double dx = details.localPosition.dx / image.ratio;
     double dy = details.localPosition.dy / image.ratio;
 
+    // 座標と色を取得してセット
+    img.Pixel pixel = image.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
     // ドラッグしたまま画像の範囲外に行くとRangeErrorになるので対策
-    if(dx < 0 || image.imgImage.width <= dx || dy < 0 || image.imgImage.height <= dy) {
+    if(pixel == img.Pixel.undefined) {
       return;
     }
-
-    // 座標と色を取得してセット
-    img.Pixel pixel = image.imgImage.getPixel(dx.toInt(), dy.toInt());
     Color color = Color.fromARGB(
         pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
     // Offsetはイミュータブルなのでコピーする必要はない
