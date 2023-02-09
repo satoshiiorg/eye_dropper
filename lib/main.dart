@@ -10,7 +10,8 @@ final imageAreaSizeProvider = StateProvider<Size>((ref) => const Size(0, 0));
 /// 画像関連の情報
 final imageProvider = StateProvider<MyImage?>((ref) => null);
 /// 選択された座標と色
-final offsetColorProvider = StateProvider<OffsetColor>((ref) => OffsetColor(null, null));
+final offsetColorProvider = StateProvider<OffsetColor>(
+        (ref) => OffsetColor(null, null));
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -32,10 +33,11 @@ class MyApp extends ConsumerWidget {
         primarySwatch: Colors.blue,
       ),
       home: Builder(builder: (context) {
-        Size fullSize = MediaQuery.of(context).size;
+        // 画像表示領域のサイズを設定
+        Size screenSize = MediaQuery.of(context).size;
         Size imageAreaSize = Size(
-            fullSize.width * imageAreaWidthRatio,
-            fullSize.height * imageAreaHeightRatio);
+            screenSize.width * imageAreaWidthRatio,
+            screenSize.height * imageAreaHeightRatio);
         return ProviderScope(
           overrides: [
             imageAreaSizeProvider.overrideWith((ref) => imageAreaSize),
@@ -94,8 +96,10 @@ class MyHomePage extends ConsumerWidget {
                   if(offsetColor.offset != null)
                     Positioned(
                       // タップ位置が開始点(0, 0)でなく中央になるようにする
-                      left: offsetColor.offset!.dx - TapPointPainter.centerOffset,
-                      top: offsetColor.offset!.dy - TapPointPainter.centerOffset,
+                      left: offsetColor.offset!.dx
+                                            - TapPointPainter.centerOffset,
+                      top: offsetColor.offset!.dy
+                                            - TapPointPainter.centerOffset,
                       child: CustomPaint(
                         painter: TapPointPainter(),
                       ),
@@ -113,8 +117,7 @@ class MyHomePage extends ConsumerWidget {
     );
   }
 
-  /// カメラロールから画像を選択し imageProvider と _imgImage にセット
-  /// 同時に _imageRatio もセットする
+  /// カメラロールから画像を選択し imageProvider にセット
   void selectImage(WidgetRef ref) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -122,8 +125,8 @@ class MyHomePage extends ConsumerWidget {
       return;
     }
     Uint8List bytes = await image.readAsBytes();
-    Size imageArea = ref.watch(imageAreaSizeProvider)!;
-    ref.read(imageProvider.notifier).state = MyImage(bytes, imageArea);
+    Size imageAreaSize = ref.watch(imageAreaSizeProvider)!;
+    ref.read(imageProvider.notifier).state = MyImage(bytes, imageAreaSize);
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
@@ -158,10 +161,11 @@ class MyImage {
   late final double ratio;
 
   // 一応未知のエンコード形式ではnullを返すと思われるがエラー処理は省略
-  MyImage(this.bytes, imageArea) : imgImage = img.decodeImage(bytes)! {
-    // 一時変数を使わなければlateにする必要ないが見づらいので
-    double widthRatio = imageArea.width < imgImage.width ? (imageArea.width / imgImage.width) : 1;
-    double heightRatio = imageArea.height < imgImage.height ? (imageArea.height / imgImage.height) : 1;
+  MyImage(this.bytes, imageAreaSize) : imgImage = img.decodeImage(bytes)! {
+    double widthRatio = imageAreaSize.width < imgImage.width ?
+                      (imageAreaSize.width / imgImage.width) : 1;
+    double heightRatio = imageAreaSize.height < imgImage.height ?
+                      (imageAreaSize.height / imgImage.height) : 1;
     ratio = min(widthRatio, heightRatio);
   }
 }
