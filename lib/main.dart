@@ -86,8 +86,8 @@ class MyHomePage extends ConsumerWidget {
                   // 画像を表示してタップ時の挙動を設定
                   if(image != null)
                     GestureDetector(
-                      onPanStart: (details) => pickColor(details, ref),
-                      onPanUpdate: (details) => pickColor(details, ref),
+                      onPanStart: (details) => pickColor(details.localPosition, ref),
+                      onPanUpdate: (details) => pickColor(details.localPosition, ref),
                       child: Image.memory(image.bytes),
                     ),
                   // タップされた位置に目印を付ける
@@ -127,12 +127,11 @@ class MyHomePage extends ConsumerWidget {
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
-  /// 引数のdetailsはDragStartDetailsまたはDragUpdateDetails
-  void pickColor(details, WidgetRef ref) {
+  void pickColor(Offset localPosition, WidgetRef ref) {
     MyImage image = ref.watch(imageProvider)!;
     // タップ位置を画像の対応する位置に変換
-    double dx = details.localPosition.dx / image.ratio;
-    double dy = details.localPosition.dy / image.ratio;
+    double dx = localPosition.dx / image.ratio;
+    double dy = localPosition.dy / image.ratio;
 
     // 座標と色を取得してセット
     img.Pixel pixel = image.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
@@ -142,9 +141,8 @@ class MyHomePage extends ConsumerWidget {
     }
     Color color = Color.fromARGB(
         pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-    // Offsetはイミュータブルなのでコピーする必要はない
-    Offset offset = details.localPosition;
-    ref.read(offsetColorProvider.notifier).state = OffsetColor(offset, color);
+    // localPositionはイミュータブルなのでコピーする必要はない
+    ref.read(offsetColorProvider.notifier).state = OffsetColor(localPosition, color);
   }
 }
 
