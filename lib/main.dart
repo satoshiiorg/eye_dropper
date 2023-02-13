@@ -5,8 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// 本当はStateNotifierProviderを使うべきだが手抜き
 /// 画像表示領域のサイズ
-final imageAreaSizeProvider = StateProvider<Size>((ref) => const Size(0, 0));
+final imageAreaSizeProvider = Provider<Size>((ref) => const Size(0, 0));
 /// 画像関連の情報
 final imageProvider = StateProvider<MyImage?>((ref) => null);
 /// 選択された座標と色
@@ -113,6 +114,7 @@ class MyHomePage extends ConsumerWidget {
     );
   }
 
+  // TODO refを渡すよりはbytesだけ返してもらって外でstateを変える方がよい？
   /// カメラロールから画像を選択し imageProvider と _imgImage にセット
   /// 同時に _imageRatio もセットする
   void selectImage(WidgetRef ref) async {
@@ -122,8 +124,8 @@ class MyHomePage extends ConsumerWidget {
       return;
     }
     Uint8List bytes = await image.readAsBytes();
-    Size imageArea = ref.watch(imageAreaSizeProvider)!;
-    ref.read(imageProvider.notifier).state = MyImage(bytes, imageArea);
+    Size imageAreaSize = ref.read(imageAreaSizeProvider)!;
+    ref.read(imageProvider.notifier).state = MyImage(bytes, imageAreaSize);
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
