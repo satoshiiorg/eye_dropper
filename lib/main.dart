@@ -11,7 +11,8 @@ final imageAreaSizeProvider = Provider<Size>((ref) => const Size(0, 0));
 /// 画像関連の情報
 final imageProvider = StateProvider<MyImage?>((ref) => null);
 /// 選択された座標と色
-final offsetColorProvider = StateProvider<OffsetColor>((ref) => OffsetColor(null, null));
+final offsetColorProvider = StateProvider<OffsetColor>(
+        (ref) => OffsetColor(null, null));
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -33,10 +34,11 @@ class MyApp extends ConsumerWidget {
         primarySwatch: Colors.blue,
       ),
       home: Builder(builder: (context) {
-        Size fullSize = MediaQuery.of(context).size;
+        // 画像表示領域のサイズを設定
+        Size screenSize = MediaQuery.of(context).size;
         Size imageAreaSize = Size(
-            fullSize.width * imageAreaWidthRatio,
-            fullSize.height * imageAreaHeightRatio);
+            screenSize.width * imageAreaWidthRatio,
+            screenSize.height * imageAreaHeightRatio);
         return ProviderScope(
           overrides: [
             imageAreaSizeProvider.overrideWith((ref) => imageAreaSize),
@@ -87,16 +89,20 @@ class MyHomePage extends ConsumerWidget {
                   // 画像を表示してタップ時の挙動を設定
                   if(image != null)
                     GestureDetector(
-                      onPanStart: (details) => pickColor(details.localPosition, ref),
-                      onPanUpdate: (details) => pickColor(details.localPosition, ref),
+                      onPanStart: (details) =>
+                          pickColor(details.localPosition, ref),
+                      onPanUpdate: (details) =>
+                          pickColor(details.localPosition, ref),
                       child: Image.memory(image.bytes),
                     ),
                   // タップされた位置に目印を付ける
                   if(offsetColor.offset != null)
                     Positioned(
                       // タップ位置が開始点(0, 0)でなく中央になるようにする
-                      left: offsetColor.offset!.dx - TapPointPainter.centerOffset,
-                      top: offsetColor.offset!.dy - TapPointPainter.centerOffset,
+                      left: offsetColor.offset!.dx
+                          - TapPointPainter.centerOffset,
+                      top: offsetColor.offset!.dy
+                          - TapPointPainter.centerOffset,
                       child: CustomPaint(
                         painter: TapPointPainter(),
                       ),
@@ -114,9 +120,7 @@ class MyHomePage extends ConsumerWidget {
     );
   }
 
-  // TODO refを渡すよりはbytesだけ返してもらって外でstateを変える方がよい？
-  /// カメラロールから画像を選択し imageProvider と _imgImage にセット
-  /// 同時に _imageRatio もセットする
+  /// カメラロールから画像を選択し imageProvider にセット
   void selectImage(WidgetRef ref) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
@@ -143,8 +147,9 @@ class MyHomePage extends ConsumerWidget {
     }
     Color color = Color.fromARGB(
         pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-    // localPositionはイミュータブルなのでコピーする必要はない
-    ref.read(offsetColorProvider.notifier).state = OffsetColor(localPosition, color);
+    // localPositionはイミュータブルなのでそのまま渡してよい
+    ref.read(offsetColorProvider.notifier).state =
+        OffsetColor(localPosition, color);
   }
 }
 
@@ -158,10 +163,11 @@ class MyImage {
   late final double ratio;
 
   // 一応未知のエンコード形式ではnullを返すと思われるがエラー処理は省略
-  MyImage(this.bytes, imageArea) : imgImage = img.decodeImage(bytes)! {
-    // 一時変数を使わなければlateにする必要ないが見づらいので
-    double widthRatio = imageArea.width < imgImage.width ? (imageArea.width / imgImage.width) : 1;
-    double heightRatio = imageArea.height < imgImage.height ? (imageArea.height / imgImage.height) : 1;
+  MyImage(this.bytes, imageAreaSize) : imgImage = img.decodeImage(bytes)! {
+    double widthRatio = imageAreaSize.width < imgImage.width ?
+    (imageAreaSize.width / imgImage.width) : 1;
+    double heightRatio = imageAreaSize.height < imgImage.height ?
+    (imageAreaSize.height / imgImage.height) : 1;
     ratio = min(widthRatio, heightRatio);
   }
 }
@@ -190,7 +196,7 @@ class PickedPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 吸い取った場所の表示領域
@@ -213,5 +219,5 @@ class TapPointPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
