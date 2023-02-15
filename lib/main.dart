@@ -5,8 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// 本当はStateNotifierProviderを使うべきだが手抜き
 /// 画像表示領域のサイズ
-final imageAreaSizeProvider = StateProvider<Size>((ref) => const Size(0, 0));
+final imageAreaSizeProvider = Provider<Size>((ref) => const Size(0, 0));
 /// 画像関連の情報
 final imageProvider = StateProvider<MyImage?>((ref) => null);
 /// 選択された座標と色
@@ -88,8 +89,10 @@ class MyHomePage extends ConsumerWidget {
                   // 画像を表示してタップ時の挙動を設定
                   if(image != null)
                     GestureDetector(
-                      onPanStart: (details) => pickColor(details, ref),
-                      onPanUpdate: (details) => pickColor(details, ref),
+                      onPanStart: (details) =>
+                          pickColor(details.localPosition, ref),
+                      onPanUpdate: (details) =>
+                          pickColor(details.localPosition, ref),
                       child: Image.memory(image.bytes),
                     ),
                   // タップされた位置に目印を付ける
@@ -97,9 +100,9 @@ class MyHomePage extends ConsumerWidget {
                     Positioned(
                       // タップ位置が開始点(0, 0)でなく中央になるようにする
                       left: offsetColor.offset!.dx
-                                            - TapPointPainter.centerOffset,
+                          - TapPointPainter.centerOffset,
                       top: offsetColor.offset!.dy
-                                            - TapPointPainter.centerOffset,
+                          - TapPointPainter.centerOffset,
                       child: CustomPaint(
                         painter: TapPointPainter(),
                       ),
@@ -125,17 +128,16 @@ class MyHomePage extends ConsumerWidget {
       return;
     }
     Uint8List bytes = await image.readAsBytes();
-    Size imageAreaSize = ref.watch(imageAreaSizeProvider)!;
+    Size imageAreaSize = ref.read(imageAreaSizeProvider)!;
     ref.read(imageProvider.notifier).state = MyImage(bytes, imageAreaSize);
   }
 
   /// TapDownDetailsで指定された座標と色をoffsetColorProviderにセットする
-  /// 引数のdetailsはDragStartDetailsまたはDragUpdateDetails
-  void pickColor(details, WidgetRef ref) {
+  void pickColor(Offset localPosition, WidgetRef ref) {
     MyImage image = ref.watch(imageProvider)!;
     // タップ位置を画像の対応する位置に変換
-    double dx = details.localPosition.dx / image.ratio;
-    double dy = details.localPosition.dy / image.ratio;
+    double dx = localPosition.dx / image.ratio;
+    double dy = localPosition.dy / image.ratio;
 
     // 座標と色を取得してセット
     img.Pixel pixel = image.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
@@ -145,9 +147,9 @@ class MyHomePage extends ConsumerWidget {
     }
     Color color = Color.fromARGB(
         pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt());
-    // Offsetはイミュータブルなのでコピーする必要はない
-    Offset offset = details.localPosition;
-    ref.read(offsetColorProvider.notifier).state = OffsetColor(offset, color);
+    // localPositionはイミュータブルなのでそのまま渡してよい
+    ref.read(offsetColorProvider.notifier).state =
+        OffsetColor(localPosition, color);
   }
 }
 
@@ -194,7 +196,7 @@ class PickedPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 吸い取った場所の表示領域
@@ -217,5 +219,5 @@ class TapPointPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
