@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:eye_dropper/component/pointer.dart';
+import 'package:eye_dropper/component/simple_pointer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
@@ -14,6 +16,7 @@ abstract class EyeDropper extends StatelessWidget {
     Key? key,
     required Uint8List? bytes,
     required Size size,
+    Pointer pointer = SimplePointer.instance,
     required ValueChanged<Color> onSelected,
   }) {
     // 画像が未指定の場合は空の領域を返す
@@ -21,7 +24,9 @@ abstract class EyeDropper extends StatelessWidget {
       return _EmptyEyeDropper(key: key, size: size);
     }
     return _EyeDropper(
-        key: key, bytes: bytes, size: size, onSelected: onSelected,);
+      key: key, bytes: bytes, size: size, pointer: pointer,
+      onSelected: onSelected,
+    );
   }
 }
 
@@ -47,12 +52,15 @@ class _EyeDropper extends EyeDropper {
       {super.key,
       required Uint8List bytes,
       required this.size,
+      required this.pointer,
       required this.onSelected,}) : _myImage = _MyImage(bytes, size), super._();
 
   /// 画像のMyImage表現
   final _MyImage _myImage;
   /// 表示領域のサイズ
   final Size size;
+  /// 指定位置を表示する
+  final Pointer pointer;
   /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
   /// タップ位置のValueNotifier
@@ -68,6 +76,7 @@ class _EyeDropper extends EyeDropper {
         children: [
           // 画像を表示してタップ時の挙動を設定
           GestureDetector(
+            // TODO onPanStartとonPanUpdateを別々に拾えるようにする？
             onPanStart: (details) => pickColor(details.localPosition),
             onPanUpdate: (details) => pickColor(details.localPosition),
             child: Image.memory(_myImage.bytes),
@@ -81,10 +90,10 @@ class _EyeDropper extends EyeDropper {
               // タップされた位置に目印を付ける
               return Positioned(
                 // タップ位置が開始点(0, 0)でなく中央になるようにする
-                left: tapPosition.dx - TapPointPainter.centerOffset,
-                top: tapPosition.dy - TapPointPainter.centerOffset,
-                child: const CustomPaint(
-                  painter: TapPointPainter.instance,
+                left: tapPosition.dx - pointer.centerOffset,
+                top: tapPosition.dy - pointer.centerOffset,
+                child: CustomPaint(
+                  painter: pointer,
                 ),
               );
             },
@@ -116,35 +125,6 @@ class _EyeDropper extends EyeDropper {
     // 選択した色を渡してコールバックを呼び出す
     onSelected(color);
   }
-}
-
-/// 吸い取った場所の表示領域
-@immutable
-class TapPointPainter extends CustomPainter {
-  const TapPointPainter._();
-
-  /// インスタンス
-  static const TapPointPainter instance = TapPointPainter._();
-  /// 囲みの幅
-  static const double rectSize = 11;
-  /// 囲みの太さ
-  static const double strokeWidth = 2;
-  /// 囲みの中心点
-  static const double centerOffset = rectSize / 2;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 赤い四角で囲う
-    final p = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-    const r = Rect.fromLTWH(0, 0, rectSize, rectSize);
-    canvas.drawRect(r, p);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 画像関連のデータ
