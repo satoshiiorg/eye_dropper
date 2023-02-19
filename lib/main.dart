@@ -86,26 +86,18 @@ class MyHomePage extends ConsumerWidget {
               },
             ),
             // 画像表示領域
-            // TODO やっぱり統一したい
-            if(imageBytes == null)
-              Container(
-                alignment: Alignment.center,
-                width: imageAreaSize.width,
-                height: imageAreaSize.height,
-              ),
-            if(imageBytes != null)
-              EyeDropper(
-                bytes: imageBytes,
-                size: imageAreaSize,
-                onSelected: (color) {
-                  // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
-                  // TODO stateを更新すると赤枠が表示されない
-                  // TODO 両方Riverpodにすると表示される(が余計にかくつく)
-                  // TODO 両方ValueNotifierにすると問題ない
-                  // ref.read(colorProvider.notifier).state = color;
-                  _color.value = color;
-                },
-              ),
+            EyeDropper.of(
+              bytes: imageBytes,
+              size: imageAreaSize,
+              onSelected: (color) {
+                // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
+                // TODO stateを更新すると赤枠が表示されない
+                // TODO 両方Riverpodにすると表示される(が余計にかくつく)
+                // TODO 両方ValueNotifierにすると問題ない
+                // ref.read(colorProvider.notifier).state = color;
+                _color.value = color;
+              },
+            ),
             ImagePickerButton(
               onSelected: (bytes) {
                 ref.read(imageBytesProvider.notifier).state = bytes;

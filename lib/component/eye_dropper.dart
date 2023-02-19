@@ -3,12 +3,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 
-class EyeDropper extends StatelessWidget {
-  EyeDropper(
+/// スポイトツールウィジェット
+abstract class EyeDropper extends StatelessWidget {
+  const EyeDropper._({super.key});
+
+  /// スポイトツールウィジェットのファクトリコンストラクタ
+  ///
+  /// bytesがnullの場合はsizeに合った空の領域を表示する
+  factory EyeDropper.of({
+    Key? key,
+    required Uint8List? bytes,
+    required Size size,
+    required ValueChanged<Color> onSelected,
+  }) {
+    // 画像が未指定の場合は空の領域を返す
+    if(bytes == null) {
+      return _EmptyEyeDropper(key: key, size: size);
+    }
+    return _EyeDropper(
+        key: key, bytes: bytes, size: size, onSelected: onSelected,);
+  }
+}
+
+/// 画像が未指定の場合に表示するための空のウィジェット
+class _EmptyEyeDropper extends EyeDropper {
+  const _EmptyEyeDropper({super.key, required this.size}): super._();
+  /// 表示領域のサイズ
+  final Size size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        alignment: Alignment.center,
+        width: size.width,
+        height: size.height,
+    );
+  }
+}
+
+/// スポイトツールウィジェット本体
+class _EyeDropper extends EyeDropper {
+  _EyeDropper(
       {super.key,
-      required this.onSelected,
       required Uint8List bytes,
-      required this.size,}) : _myImage = _MyImage(bytes, size);
+      required this.size,
+      required this.onSelected,}) : _myImage = _MyImage(bytes, size), super._();
 
   /// 画像のMyImage表現
   final _MyImage _myImage;
