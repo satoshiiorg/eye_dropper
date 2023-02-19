@@ -12,8 +12,11 @@ class EyeDropper extends StatelessWidget {
 
   /// 画像のMyImage表現
   final _MyImage _myImage;
+  /// 表示領域のサイズ
   final Size size;
+  /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
+  /// タップ位置のValueNotifier
   final ValueNotifier<Offset?> _tapPosition = ValueNotifier(null);
 
   @override
@@ -41,8 +44,8 @@ class EyeDropper extends StatelessWidget {
                 // タップ位置が開始点(0, 0)でなく中央になるようにする
                 left: tapPosition.dx - TapPointPainter.centerOffset,
                 top: tapPosition.dy - TapPointPainter.centerOffset,
-                child: CustomPaint(
-                  painter: TapPointPainter(),
+                child: const CustomPaint(
+                  painter: TapPointPainter.instance,
                 ),
               );
             },
@@ -69,23 +72,27 @@ class EyeDropper extends StatelessWidget {
       pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt(),
     );
 
+    // タップ位置をセット
     _tapPosition.value = localPosition;
+    // 選択した色を渡してコールバックを呼び出す
     onSelected(color);
   }
 }
 
-//TODO シングルトン
 /// 吸い取った場所の表示領域
 @immutable
 class TapPointPainter extends CustomPainter {
+  const TapPointPainter._();
+
+  /// インスタンス
+  static const TapPointPainter instance = TapPointPainter._();
   /// 囲みの幅
   static const double rectSize = 11;
-
   /// 囲みの太さ
   static const double strokeWidth = 2;
-
   /// 囲みの中心点
   static const double centerOffset = rectSize / 2;
+
   @override
   void paint(Canvas canvas, Size size) {
     // 赤い四角で囲う
