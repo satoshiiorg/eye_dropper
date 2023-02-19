@@ -9,7 +9,7 @@ final imageAreaSizeProvider = Provider<Size>((ref) => Size.zero);
 /// 画像のUint8List表現
 final imageBytesProvider = StateProvider<Uint8List?>((ref) => null);
 /// 選択された色
-final colorProvider = StateProvider<Color>((ref) => Colors.white);
+// final colorProvider = StateProvider<Color>((ref) => Colors.white);
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -41,7 +41,7 @@ class MyApp extends ConsumerWidget {
           overrides: [
             imageAreaSizeProvider.overrideWith((ref) => imageAreaSize),
           ],
-          child: const MyHomePage(title: 'スポイトツール'),
+          child: MyHomePage(title: 'スポイトツール'),
         );
       },),
     );
@@ -49,15 +49,17 @@ class MyApp extends ConsumerWidget {
 }
 
 class MyHomePage extends ConsumerWidget {
-  const MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, required this.title});
 
   final String title;
+
+  final ValueNotifier<Color> _color = ValueNotifier(Colors.white);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final imageAreaSize = ref.watch(imageAreaSizeProvider);
     final imageBytes = ref.watch(imageBytesProvider);
-    final color = ref.watch(colorProvider);
+    // final color = ref.watch(colorProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -67,13 +69,22 @@ class MyHomePage extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 選択された色見本を表示
-            CustomPaint(
-              size: const Size(50, 50),
-              painter: PickedPainter(color),
+            ValueListenableBuilder(
+              valueListenable: _color,
+              builder: (_, color, __) {
+                return Column(
+                  children: [
+                    // 選択された色見本を表示
+                    CustomPaint(
+                      size: const Size(50, 50),
+                      painter: PickedPainter(color),
+                    ),
+                    // 選択された色のカラーコードを表示
+                    Text(color.hexTriplet()),
+                  ],
+                );
+              },
             ),
-            // 選択された色のカラーコードを表示
-            Text(color.hexTriplet()),
             // 画像表示領域
             // TODO やっぱり統一したい
             if(imageBytes == null)
@@ -87,9 +98,12 @@ class MyHomePage extends ConsumerWidget {
                 bytes: imageBytes,
                 size: imageAreaSize,
                 onSelected: (color) {
-                  // TODO かくつく？
-                  // TODO 赤枠が表示されない
-                  ref.read(colorProvider.notifier).state = color;
+                  // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
+                  // TODO stateを更新すると赤枠が表示されない
+                  // TODO 両方Riverpodにすると表示される(が余計にかくつく)
+                  // TODO 両方ValueNotifierにすると問題ない
+                  // ref.read(colorProvider.notifier).state = color;
+                  _color.value = color;
                 },
               ),
             ImagePickerButton(
