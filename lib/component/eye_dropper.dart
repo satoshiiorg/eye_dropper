@@ -1,16 +1,15 @@
 import 'dart:math';
-import 'package:eye_dropper/component/pointer.dart';
-import 'package:eye_dropper/component/simple_pointer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
+import 'pointer.dart';
+import 'simple_pointer.dart';
 
 /// スポイトツールウィジェット
 abstract class EyeDropper extends StatelessWidget {
   const EyeDropper._({super.key});
 
   /// スポイトツールウィジェットのファクトリコンストラクタ
-  ///
   /// bytesがnullの場合はsizeに合った空の領域を表示する
   factory EyeDropper.of({
     Key? key,
