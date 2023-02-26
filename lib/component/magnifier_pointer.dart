@@ -29,6 +29,10 @@ class MagnifierPointer extends Pointer {
 
   @override
   Future<void> paint(Canvas canvas, Size size) async {
+    if(myImage.uiImage == null) {
+      return;
+    }
+
     final paint = Paint();
 
     // 外枠
@@ -49,7 +53,7 @@ class MagnifierPointer extends Pointer {
       outerRectSize / 2,
     );
     canvas.drawImageRect(
-      myImage.uiImage,
+      myImage.uiImage!,
       sourceRect,
       largeRect,
       paint,

@@ -156,9 +156,8 @@ class MyImage {
   final img.Image imgImage;
   /// 画像の縮小率
   late final double ratio;
-
-  // TODO 非同期なのでlate finalよりnullableにしておいた方が安全
-  late final ui.Image uiImage;
+  /// 画像のui.Image表現
+  ui.Image? uiImage;
 
   /// img.Imageをui.Imageに変換する
   Future<ui.Image> imgImageToUiImage() async {
