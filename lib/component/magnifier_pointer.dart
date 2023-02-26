@@ -12,12 +12,14 @@ class MagnifierPointer extends Pointer {
   static const double innerRectSize = 11;
   /// 囲みの太さ
   static const double strokeWidth = 2;
+  /// 拡大倍率
+  static const double magnification = 2;
   /// 囲みの中心点
   @override
   double get centerOffset => outerRectSize / 2;
   /// 画像
   MyImage myImage;
-  /// 可変
+  /// タップ位置
   Offset _position = Offset.zero;
 
   /// 指定されたpositionに対応する拡大画像を返す
@@ -27,6 +29,7 @@ class MagnifierPointer extends Pointer {
     return this;
   }
 
+  /// 二重の四角で囲んだ拡大画像を表示する
   @override
   Future<void> paint(Canvas canvas, Size size) async {
     if(myImage.uiImage == null) {
@@ -47,10 +50,10 @@ class MagnifierPointer extends Pointer {
 
     // 画像を拡大表示
     final sourceRect = Rect.fromLTWH(
-      _position.dx - (centerOffset / 2),
-      _position.dy - (centerOffset / 2),
-      outerRectSize / 2,
-      outerRectSize / 2,
+      _position.dx - (centerOffset / magnification),
+      _position.dy - (centerOffset / magnification),
+      outerRectSize / magnification,
+      outerRectSize / magnification,
     );
     canvas.drawImageRect(
       myImage.uiImage!,
@@ -77,7 +80,7 @@ class MagnifierPointer extends Pointer {
     paint
       ..color = Colors.black
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = strokeWidth;
     canvas.drawRect(smallRect, paint);
   }
 
