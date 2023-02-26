@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 
 /// 吸い取った場所の表示領域
 /// 拡大表示を行う
-/// 拡大表示領域内をタップした場合は拡大表示領域をドラッグで移動できる
-class DraggableMagnifierPointer extends Pointer {
-  DraggableMagnifierPointer(this.myImage);
+class CenterMagnifierPointer extends Pointer {
+  CenterMagnifierPointer(this.myImage);
   /// 囲みの幅
   static const double outerRectSize = 51;
   /// 囲みの幅
@@ -70,10 +69,8 @@ class DraggableMagnifierPointer extends Pointer {
       ..strokeWidth = strokeWidth;
     canvas.drawRect(largeRect, paint);
 
-    // TODO ここで中心の場所は取れるのだからなんとかなる？
     // 内枠
     const smallRect = Rect.fromLTWH(
-      // 中心
       (outerRectSize / 2) - (strokeWidth * 2.5),
       (outerRectSize / 2) - (strokeWidth * 2.5),
       innerRectSize,
