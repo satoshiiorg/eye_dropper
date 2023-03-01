@@ -1,13 +1,14 @@
-import 'dart:ui' as ui;
 import 'package:eye_dropper/pointer/pointer.dart';
+import 'package:eye_dropper/util/multiplex_image.dart';
 import 'package:flutter/material.dart';
 
 /// 吸い取った場所の表示領域
 /// 拡大表示を行う
 /// 拡大表示領域内をタップした場合は拡大表示領域をドラッグで移動できる
+// TODO FIXME 縦長の画像で表示がずれる（ratioが反映されてない？）
 class DraggableMagnifierPointer extends Pointer {
   DraggableMagnifierPointer(
-    this.uiImage, {
+    this.multiplexImage, {
     this.magnification = 2,
     this.outerRectSize = 51,
     this.innerRectSize = 11,
@@ -15,8 +16,8 @@ class DraggableMagnifierPointer extends Pointer {
   });
 
   /// 画像
-  final ui.Image uiImage;
-  /// 拡大倍率
+  final MultiplexImage multiplexImage;
+  /// ポインタ部分の拡大倍率
   final double magnification;
   /// 囲みの幅
   final double outerRectSize;
@@ -56,7 +57,7 @@ class DraggableMagnifierPointer extends Pointer {
       outerRectSize / magnification,
     );
     canvas.drawImageRect(
-      uiImage,
+      multiplexImage.uiImage,
       sourceRect,
       largeRect,
       paint,

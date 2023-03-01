@@ -13,15 +13,20 @@ class MultiplexImage {
     final heightRatio = size.height < imgImage.height ?
     (size.height / imgImage.height) : 1.0;
     ratio = min(widthRatio, heightRatio);
+
+    () async {
+      uiImage = await imgImageToUiImage(imgImage);
+    }();
   }
 
   /// 画像のバイト列表現
   final Uint8List bytes;
   /// 画像のimg.Image表現
   final img.Image imgImage;
+  /// 画像のui.Image表現
+  late final ui.Image uiImage;
   /// 画像の縮小率
   late final double ratio;
-  Future<ui.Image> get uiImage => imgImageToUiImage(imgImage);
 
   /// img.Imageをui.Imageに変換する
   static Future<ui.Image> imgImageToUiImage(img.Image imgImage) async {

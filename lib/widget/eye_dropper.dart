@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:eye_dropper/pointer/magnifier_pointer.dart';
 import 'package:eye_dropper/pointer/pointer.dart';
 import 'package:eye_dropper/util/multiplex_image.dart';
@@ -16,7 +15,8 @@ abstract class EyeDropper extends StatelessWidget {
     Key? key,
     required Uint8List? bytes,
     required Size size,
-    Pointer Function(ui.Image) pointerFactory = DraggableMagnifierPointer.new,
+    Pointer Function(MultiplexImage) pointerFactory =
+        DraggableMagnifierPointer.new,
     required ValueChanged<Color> onSelected,
   }) {
     // 画像が未指定の場合は空の領域を返す
@@ -52,14 +52,11 @@ class _EyeDropper extends EyeDropper {
       {super.key,
       required Uint8List bytes,
       required this.size,
-      required Pointer Function(ui.Image) pointerFactory,
+      required Pointer Function(MultiplexImage) pointerFactory,
       required this.onSelected,}) :
         _multiplexImage = MultiplexImage(bytes, size),
         super._() {
-    // img.Imageをui.Imageに変換する
-    () async {
-      pointer = pointerFactory(await _multiplexImage.uiImage);
-    }();
+    pointer = pointerFactory(_multiplexImage);
   }
 
   /// 未定義オフセット
