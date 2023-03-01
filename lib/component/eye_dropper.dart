@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:eye_dropper/component/magnifier_pointer.dart';
 import 'package:eye_dropper/component/multiplex_image.dart';
 import 'package:eye_dropper/component/pointer.dart';
@@ -15,7 +16,7 @@ abstract class EyeDropper extends StatelessWidget {
     Key? key,
     required Uint8List? bytes,
     required Size size,
-    Pointer Function(MultiplexImage) pointerFactory = DraggableMagnifierPointer.new,
+    Pointer Function(ui.Image?) pointerFactory = DraggableMagnifierPointer.new,
     required ValueChanged<Color> onSelected,
   }) {
     // 画像が未指定の場合は空の領域を返す
@@ -51,14 +52,13 @@ class _EyeDropper extends EyeDropper {
       {super.key,
       required Uint8List bytes,
       required this.size,
-      required Pointer Function(MultiplexImage) pointerFactory,
-      required this.onSelected,}) : _myImage = MultiplexImage(bytes, size), super._() {
-    // TODO ファクトリでなく普通にインスタンスをもらってここでsetImageする方がよい
-    pointer = pointerFactory(_myImage);
+      required Pointer Function(ui.Image?) pointerFactory,
+      required this.onSelected,}) : _multiplexImage = MultiplexImage(bytes, size), super._() {
+    pointer = pointerFactory(_multiplexImage.uiImage);
   }
 
-  /// 画像のMyImage表現
-  final MultiplexImage _myImage;
+  /// 画像のMultiplexImage表現
+  final MultiplexImage _multiplexImage;
   /// 表示領域のサイズ
   final Size size;
   /// 指定位置を表示する
@@ -66,6 +66,7 @@ class _EyeDropper extends EyeDropper {
   /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
   /// 前回のタップ/ドラッグ位置
+  //TODO 一応(-1, -1)とかにする
   final ValueNotifier<Offset> _oldPosition = ValueNotifier(Offset.zero);
 
   @override
@@ -97,7 +98,7 @@ class _EyeDropper extends EyeDropper {
               pickColor(pointer.position);
               _oldPosition.value = localPosition;
             },
-            child: Image.memory(_myImage.bytes),
+            child: Image.memory(_multiplexImage.bytes),
           ),
           ValueListenableBuilder(
             valueListenable: _oldPosition,
@@ -123,11 +124,11 @@ class _EyeDropper extends EyeDropper {
   /// 指定位置の色を引数にしてコールバックを呼び出す
   void pickColor(Offset position) {
     // 指定位置を画像の対応する位置に変換
-    final dx = position.dx / _myImage.ratio;
-    final dy = position.dy / _myImage.ratio;
+    final dx = position.dx / _multiplexImage.ratio;
+    final dy = position.dy / _multiplexImage.ratio;
 
     // 座標と色を取得してセット
-    final pixel = _myImage.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
+    final pixel = _multiplexImage.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
     // ドラッグしたまま画像の範囲外に行くとRangeErrorになるので
     if(pixel == img.Pixel.undefined) {
       return;
