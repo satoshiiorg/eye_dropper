@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 
 /// 吸い取った場所の表示領域
 /// 拡大表示なしのシンプルな赤枠
-@immutable
 class SimplePointer extends Pointer {
-  const SimplePointer._(): super();
+  SimplePointer._(): super();
   static SimplePointer instanceOf(MultiplexImage _) => instance;
 
   /// インスタンス
-  static const SimplePointer instance = SimplePointer._();
+  static final SimplePointer instance = SimplePointer._();
   /// 囲みの幅
   static const double rectSize = 11;
   /// 囲みの太さ
@@ -18,12 +17,6 @@ class SimplePointer extends Pointer {
   /// 囲みの中心点
   @override
   double get centerOffset => rectSize / 2;
-
-  /// 位置に関係なく唯一のインスタンスを返す
-  @override
-  Pointer moveTo(Offset offset) {
-    return this;
-  }
 
   @override
   void paint(Canvas canvas, Size size) {

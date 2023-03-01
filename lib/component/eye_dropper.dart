@@ -65,8 +65,11 @@ class _EyeDropper extends EyeDropper {
   late final Pointer pointer;
   /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
-  /// タップ位置のValueNotifier
-  final ValueNotifier<Offset?> _tapPosition = ValueNotifier(null);
+  /// 移動先のValueNotifier
+  final ValueNotifier<Offset?> _destPosition = ValueNotifier(null);
+  // TODO
+  bool _drag = false;
+  Offset _oldPosition = Offset.zero;
 
   @override
   Widget build(BuildContext context) {
@@ -78,31 +81,70 @@ class _EyeDropper extends EyeDropper {
         children: [
           // 画像を表示してタップ時の挙動を設定
           GestureDetector(
-            // TODO onPanStartとonPanUpdateを別々に拾えるようにする？
-            // TODO スマートデバイスではタップ位置よりもMagnifierPointerの中心にしたい
-            onPanStart: (details) => pickColor(details.localPosition),
-            onPanUpdate: (details) => pickColor(details.localPosition),
+            onPanStart: (details) {
+              final localPosition = details.localPosition;
+              if(pointer.contains(localPosition)) {
+                _drag = true;
+                _oldPosition = details.localPosition;
+              } else {
+                _drag = false;
+                // タップ位置に移動
+                pickColor(details.localPosition);
+                // タップ位置をセット
+                _destPosition.value = details.localPosition;
+              }
+            },
+            onPanUpdate: (details) {
+              if(_drag) {
+                // TODO
+                final distance = details.localPosition - _oldPosition;
+                pointer.position = pointer.position + distance;
+                pickColor(pointer.position);
+                _oldPosition = details.localPosition;
+                _destPosition.value = pointer.position;
+              } else {
+                // そのままドラッグ位置を中心に移動
+                pickColor(details.localPosition);
+                // ドラッグ位置をセット
+                _destPosition.value = details.localPosition;
+              }
+            },
             child: Image.memory(_myImage.bytes),
           ),
           ValueListenableBuilder(
-            valueListenable: _tapPosition,
-            builder: (_, tapPosition, __) {
-              if(tapPosition == null) {
+            valueListenable: _destPosition,
+            builder: (_, destPosition, __) {
+              if(destPosition == null) {
                 return const SizedBox.shrink();
               }
-              // タップされた位置に目印を付ける
-              return Positioned(
-                // タップ位置が開始点(0, 0)でなく中央になるようにする
-                left: tapPosition.dx - pointer.centerOffset,
-                top: tapPosition.dy - pointer.centerOffset,
-                child: Stack(
-                  children: [
-                    CustomPaint(
-                      painter: pointer.moveTo(tapPosition),
-                    ),
-                  ],
-                ),
-              );
+              // ポインタを適切な位置に移動する
+              return _drag
+                  ?
+                Positioned(
+                  // タップ位置が開始点(0, 0)でなく中央になるようにする
+                  left: pointer.position.dx - pointer.centerOffset,
+                  top: pointer.position.dy - pointer.centerOffset,
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        painter: pointer,
+                      ),
+                    ],
+                  ),
+                )
+                  :
+                Positioned(
+                  // タップ位置が開始点(0, 0)でなく中央になるようにする
+                  left: destPosition.dx - pointer.centerOffset,
+                  top: destPosition.dy - pointer.centerOffset,
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        painter: pointer..position = destPosition,
+                      ),
+                    ],
+                  ),
+                );
             },
           ),
         ],
@@ -110,12 +152,11 @@ class _EyeDropper extends EyeDropper {
     );
   }
 
-  /// TapDownDetailsで指定された座標を_tapPositionにセットし
-  /// 色を引数にしてコールバックを呼び出す
-  void pickColor(Offset localPosition) {
-    // タップ位置を画像の対応する位置に変換
-    final dx = localPosition.dx / _myImage.ratio;
-    final dy = localPosition.dy / _myImage.ratio;
+  /// 指定位置の色を引数にしてコールバックを呼び出す
+  void pickColor(Offset position) {
+    // 指定位置を画像の対応する位置に変換
+    final dx = position.dx / _myImage.ratio;
+    final dy = position.dy / _myImage.ratio;
 
     // 座標と色を取得してセット
     final pixel = _myImage.imgImage.getPixelSafe(dx.toInt(), dy.toInt());
@@ -127,8 +168,6 @@ class _EyeDropper extends EyeDropper {
       pixel.a.toInt(), pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt(),
     );
 
-    // タップ位置をセット
-    _tapPosition.value = localPosition;
     // 選択した色を渡してコールバックを呼び出す
     onSelected(color);
   }

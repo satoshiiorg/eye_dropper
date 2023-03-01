@@ -20,15 +20,6 @@ class DraggableMagnifierPointer extends Pointer {
   double get centerOffset => outerRectSize / 2;
   /// 画像
   MultiplexImage myImage;
-  /// タップ位置
-  Offset _position = Offset.zero;
-
-  /// 指定されたpositionに対応する拡大画像を返す
-  @override
-  Pointer moveTo(Offset position) {
-    _position = position;
-    return this;
-  }
 
   /// 二重の四角で囲んだ拡大画像を表示する
   @override
@@ -51,8 +42,8 @@ class DraggableMagnifierPointer extends Pointer {
 
     // 画像を拡大表示
     final sourceRect = Rect.fromLTWH(
-      _position.dx - (centerOffset / magnification),
-      _position.dy - (centerOffset / magnification),
+      position.dx - (centerOffset / magnification),
+      position.dy - (centerOffset / magnification),
       outerRectSize / magnification,
       outerRectSize / magnification,
     );
@@ -70,7 +61,6 @@ class DraggableMagnifierPointer extends Pointer {
       ..strokeWidth = strokeWidth;
     canvas.drawRect(largeRect, paint);
 
-    // TODO ここで中心の場所は取れるのだからなんとかなる？
     // 内枠
     const smallRect = Rect.fromLTWH(
       // 中心

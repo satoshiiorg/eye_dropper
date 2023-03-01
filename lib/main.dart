@@ -1,3 +1,4 @@
+// import 'package:eye_dropper/component/simple_pointer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,6 +90,7 @@ class MyHomePage extends ConsumerWidget {
             EyeDropper.of(
               bytes: imageBytes,
               size: imageAreaSize,
+              // pointerFactory: SimplePointer.instanceOf,
               onSelected: (color) {
                 // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
                 // TODO stateを更新すると赤枠が表示されない
