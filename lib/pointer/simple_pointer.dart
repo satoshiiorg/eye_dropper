@@ -1,5 +1,5 @@
 import 'dart:ui' as ui;
-import 'package:eye_dropper/component/pointer.dart';
+import 'package:eye_dropper/pointer/pointer.dart';
 import 'package:flutter/material.dart';
 
 /// 吸い取った場所の表示領域

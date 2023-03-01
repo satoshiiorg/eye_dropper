@@ -1,11 +1,10 @@
-// import 'package:eye_dropper/component/simple_pointer.dart';
-import 'package:eye_dropper/component/magnifier_pointer.dart';
-import 'package:eye_dropper/component/simple_pointer.dart';
+import 'package:eye_dropper/pointer/magnifier_pointer.dart';
+// import 'package:eye_dropper/pointer/simple_pointer.dart';
+import 'package:eye_dropper/widget/eye_dropper.dart';
+import 'package:eye_dropper/widget/image_picker_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'component/eye_dropper.dart';
-import 'component/image_picker_button.dart';
 
 /// 画像表示領域のサイズ
 final imageAreaSizeProvider = Provider<Size>((ref) => Size.zero);

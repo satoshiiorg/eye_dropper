@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
-import 'package:eye_dropper/component/magnifier_pointer.dart';
-import 'package:eye_dropper/component/multiplex_image.dart';
-import 'package:eye_dropper/component/pointer.dart';
+import 'package:eye_dropper/pointer/magnifier_pointer.dart';
+import 'package:eye_dropper/pointer/pointer.dart';
+import 'package:eye_dropper/util/multiplex_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
