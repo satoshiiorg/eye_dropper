@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 /// 吸い取った場所の表示領域
 /// 拡大表示を行う
 /// 拡大表示領域内をタップした場合は拡大表示領域をドラッグで移動できる
-// TODO FIXME 縦長の画像で表示がずれる（ratioが反映されてない？）
 class DraggableMagnifierPointer extends Pointer {
   DraggableMagnifierPointer(
     this.multiplexImage, {
@@ -51,10 +50,10 @@ class DraggableMagnifierPointer extends Pointer {
 
     // 画像を拡大表示
     final sourceRect = Rect.fromLTWH(
-      position.dx - (centerOffset / magnification),
-      position.dy - (centerOffset / magnification),
-      outerRectSize / magnification,
-      outerRectSize / magnification,
+      (position.dx - (centerOffset / magnification)) / multiplexImage.ratio,
+      (position.dy - (centerOffset / magnification)) / multiplexImage.ratio,
+      outerRectSize / magnification / multiplexImage.ratio,
+      outerRectSize / magnification / multiplexImage.ratio,
     );
     canvas.drawImageRect(
       multiplexImage.uiImage,
