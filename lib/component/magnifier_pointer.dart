@@ -32,7 +32,12 @@ class DraggableMagnifierPointer extends Pointer {
     final paint = Paint();
 
     // 外枠
-    const largeRect = Rect.fromLTWH(0, 0, outerRectSize, outerRectSize);
+    final largeRect = Rect.fromLTWH(
+        - centerOffset,
+        - centerOffset,
+        outerRectSize,
+        outerRectSize,
+    );
 
     // 透過画像のために背景を白で塗りつぶし
     paint
@@ -65,8 +70,8 @@ class DraggableMagnifierPointer extends Pointer {
     // 内枠
     const smallRect = Rect.fromLTWH(
       // 中心
-      (outerRectSize / 2) - (strokeWidth * 2.5),
-      (outerRectSize / 2) - (strokeWidth * 2.5),
+      - (strokeWidth * 2.5),
+      - (strokeWidth * 2.5),
       innerRectSize,
       innerRectSize,
     );

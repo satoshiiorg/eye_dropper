@@ -107,9 +107,8 @@ class _EyeDropper extends EyeDropper {
               }
               // ポインタを適切な位置に移動する
               return Positioned(
-                // タップ位置が開始点(0, 0)でなく中央になるようにする
-                left: pointer.position.dx - pointer.centerOffset,
-                top: pointer.position.dy - pointer.centerOffset,
+                left: pointer.position.dx,
+                top: pointer.position.dy,
                 child: CustomPaint(
                   painter: pointer,
                 ),

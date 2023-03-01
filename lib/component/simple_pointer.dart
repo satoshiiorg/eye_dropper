@@ -25,7 +25,12 @@ class SimplePointer extends Pointer {
       ..color = Colors.red
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
-    const rect = Rect.fromLTWH(0, 0, rectSize, rectSize);
+    final rect = Rect.fromLTWH(
+        - centerOffset,
+        - centerOffset,
+        rectSize,
+        rectSize,
+    );
     canvas.drawRect(rect, paint);
   }
 

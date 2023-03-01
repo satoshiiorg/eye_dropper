@@ -11,8 +11,6 @@ abstract class Pointer extends CustomPainter {
 
   /// otherPositionをこのポインタの描画範囲に含むか
   bool contains(Offset otherPosition) {
-    // EyeDropper側でcenterOffset分ずらしているのでこちらでも補正が必要
-    // TODO ↑あちらでもこちらでも補正をするのはあまりよろしくない
     return position.dx <= otherPosition.dx + centerOffset
         && position.dy <= otherPosition.dy + centerOffset
         && otherPosition.dx + centerOffset <= position.dx + centerOffset * 2
