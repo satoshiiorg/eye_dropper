@@ -15,8 +15,7 @@ class DraggableMagnifierPointer extends Pointer {
   });
 
   /// 画像
-  // nullableにしておいた方がMultiplexImageの非同期との関連で都合がいい
-  final ui.Image? uiImage;
+  final ui.Image uiImage;
   /// 拡大倍率
   final double magnification;
   /// 囲みの幅
@@ -32,10 +31,6 @@ class DraggableMagnifierPointer extends Pointer {
   /// 二重の四角で囲んだ拡大画像を表示する
   @override
   Future<void> paint(Canvas canvas, Size size) async {
-    if(uiImage == null) {
-      return;
-    }
-
     final paint = Paint();
 
     // 外枠
@@ -61,7 +56,7 @@ class DraggableMagnifierPointer extends Pointer {
       outerRectSize / magnification,
     );
     canvas.drawImageRect(
-      uiImage!,
+      uiImage,
       sourceRect,
       largeRect,
       paint,

@@ -16,7 +16,7 @@ abstract class EyeDropper extends StatelessWidget {
     Key? key,
     required Uint8List? bytes,
     required Size size,
-    Pointer Function(ui.Image?) pointerFactory = DraggableMagnifierPointer.new,
+    Pointer Function(ui.Image) pointerFactory = DraggableMagnifierPointer.new,
     required ValueChanged<Color> onSelected,
   }) {
     // 画像が未指定の場合は空の領域を返す
@@ -52,11 +52,14 @@ class _EyeDropper extends EyeDropper {
       {super.key,
       required Uint8List bytes,
       required this.size,
-      required Pointer Function(ui.Image?) pointerFactory,
+      required Pointer Function(ui.Image) pointerFactory,
       required this.onSelected,}) :
         _multiplexImage = MultiplexImage(bytes, size),
         super._() {
-    pointer = pointerFactory(_multiplexImage.uiImage);
+    // img.Imageをui.Imageに変換する
+    () async {
+      pointer = pointerFactory(await _multiplexImage.uiImage);
+    }();
   }
 
   /// 未定義オフセット
