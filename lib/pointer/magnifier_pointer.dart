@@ -9,7 +9,7 @@ class DraggableMagnifierPointer extends Pointer {
   DraggableMagnifierPointer(
     this.multiplexImage, {
     this.magnification = 2,
-    this.outerRectSize = 51,
+    this.outerRectSize = 91,
     this.innerRectSize = 11,
     this.strokeWidth = 2,
   });
