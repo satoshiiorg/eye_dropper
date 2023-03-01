@@ -53,10 +53,14 @@ class _EyeDropper extends EyeDropper {
       required Uint8List bytes,
       required this.size,
       required Pointer Function(ui.Image?) pointerFactory,
-      required this.onSelected,}) : _multiplexImage = MultiplexImage(bytes, size), super._() {
+      required this.onSelected,}) :
+        _multiplexImage = MultiplexImage(bytes, size),
+        super._() {
     pointer = pointerFactory(_multiplexImage.uiImage);
   }
 
+  /// 未定義オフセット
+  static const nullOffset = Offset(-1, -1);
   /// 画像のMultiplexImage表現
   final MultiplexImage _multiplexImage;
   /// 表示領域のサイズ
@@ -66,8 +70,7 @@ class _EyeDropper extends EyeDropper {
   /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
   /// 前回のタップ/ドラッグ位置
-  //TODO 一応(-1, -1)とかにする
-  final ValueNotifier<Offset> _oldPosition = ValueNotifier(Offset.zero);
+  final ValueNotifier<Offset> _oldPosition = ValueNotifier(nullOffset);
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +106,7 @@ class _EyeDropper extends EyeDropper {
           ValueListenableBuilder(
             valueListenable: _oldPosition,
             builder: (_, oldPosition, __) {
-              if(oldPosition == Offset.zero) {
+              if(oldPosition == nullOffset) {
                 return const SizedBox.shrink();
               }
               // ポインタを適切な位置に移動する
