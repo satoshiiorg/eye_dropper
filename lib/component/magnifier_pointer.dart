@@ -14,6 +14,7 @@ class DraggableMagnifierPointer extends Pointer {
   /// 囲みの太さ
   static const double strokeWidth = 2;
   /// 拡大倍率
+  // TODO 指定できるように
   static const double magnification = 2;
   /// 囲みの中心点
   @override

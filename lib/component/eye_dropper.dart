@@ -65,11 +65,8 @@ class _EyeDropper extends EyeDropper {
   late final Pointer pointer;
   /// タップ時のコールバック
   final ValueChanged<Color> onSelected;
-  /// 移動先のValueNotifier
-  final ValueNotifier<Offset?> _destPosition = ValueNotifier(null);
-  // TODO
-  bool _drag = false;
-  Offset _oldPosition = Offset.zero;
+  /// 前回のタップ/ドラッグ位置
+  final ValueNotifier<Offset> _oldPosition = ValueNotifier(Offset.zero);
 
   @override
   Widget build(BuildContext context) {
@@ -83,68 +80,40 @@ class _EyeDropper extends EyeDropper {
           GestureDetector(
             onPanStart: (details) {
               final localPosition = details.localPosition;
-              if(pointer.contains(localPosition)) {
-                _drag = true;
-                _oldPosition = details.localPosition;
-              } else {
-                _drag = false;
+              // タップ位置をセット
+              _oldPosition.value = localPosition;
+              // ポインタ枠外をタップした場合はポインタをそこへ直接移動
+              if(!pointer.contains(localPosition)) {
+                pickColor(localPosition);
                 // タップ位置に移動
-                pickColor(details.localPosition);
-                // タップ位置をセット
-                _destPosition.value = details.localPosition;
+                pointer.position = localPosition;
               }
             },
             onPanUpdate: (details) {
-              if(_drag) {
-                // TODO
-                final distance = details.localPosition - _oldPosition;
-                pointer.position = pointer.position + distance;
-                pickColor(pointer.position);
-                _oldPosition = details.localPosition;
-                _destPosition.value = pointer.position;
-              } else {
-                // そのままドラッグ位置を中心に移動
-                pickColor(details.localPosition);
-                // ドラッグ位置をセット
-                _destPosition.value = details.localPosition;
-              }
+              // 前回のタップ/ドラッグ位置から移動した距離分ポインタを移動させる
+              final localPosition = details.localPosition;
+              final distance = localPosition - _oldPosition.value;
+              pointer.position = pointer.position + distance;
+              pickColor(pointer.position);
+              _oldPosition.value = localPosition;
             },
             child: Image.memory(_myImage.bytes),
           ),
           ValueListenableBuilder(
-            valueListenable: _destPosition,
-            builder: (_, destPosition, __) {
-              if(destPosition == null) {
+            valueListenable: _oldPosition,
+            builder: (_, oldPosition, __) {
+              if(oldPosition == Offset.zero) {
                 return const SizedBox.shrink();
               }
               // ポインタを適切な位置に移動する
-              return _drag
-                  ?
-                Positioned(
-                  // タップ位置が開始点(0, 0)でなく中央になるようにする
-                  left: pointer.position.dx - pointer.centerOffset,
-                  top: pointer.position.dy - pointer.centerOffset,
-                  child: Stack(
-                    children: [
-                      CustomPaint(
-                        painter: pointer,
-                      ),
-                    ],
-                  ),
-                )
-                  :
-                Positioned(
-                  // タップ位置が開始点(0, 0)でなく中央になるようにする
-                  left: destPosition.dx - pointer.centerOffset,
-                  top: destPosition.dy - pointer.centerOffset,
-                  child: Stack(
-                    children: [
-                      CustomPaint(
-                        painter: pointer..position = destPosition,
-                      ),
-                    ],
-                  ),
-                );
+              return Positioned(
+                // タップ位置が開始点(0, 0)でなく中央になるようにする
+                left: pointer.position.dx - pointer.centerOffset,
+                top: pointer.position.dy - pointer.centerOffset,
+                child: CustomPaint(
+                  painter: pointer,
+                ),
+              );
             },
           ),
         ],
