@@ -1,12 +1,12 @@
-import 'dart:ui' as ui;
 import 'package:eye_dropper/pointer/pointer.dart';
+import 'package:eye_dropper/util/multiplex_image.dart';
 import 'package:flutter/material.dart';
 
 /// 吸い取った場所の表示領域
 /// 拡大表示なしのシンプルな赤枠
 class SimplePointer extends Pointer {
   SimplePointer._(): super();
-  static SimplePointer instanceOf(ui.Image _) => instance;
+  static SimplePointer instanceOf(MultiplexImage _) => instance;
 
   /// インスタンス
   static final SimplePointer instance = SimplePointer._();

@@ -1,5 +1,5 @@
 import 'package:eye_dropper/pointer/magnifier_pointer.dart';
-// import 'package:eye_dropper/pointer/simple_pointer.dart';
+import 'package:eye_dropper/pointer/simple_pointer.dart';
 import 'package:eye_dropper/widget/eye_dropper.dart';
 import 'package:eye_dropper/widget/image_picker_button.dart';
 import 'package:flutter/material.dart';
