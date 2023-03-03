@@ -31,6 +31,10 @@ class DraggableMagnifierPointer extends Pointer {
   /// 二重の四角で囲んだ拡大画像を表示する
   @override
   Future<void> paint(Canvas canvas, Size size) async {
+    if(multiplexImage.uiImage == null) {
+      return;
+    }
+
     final paint = Paint();
 
     // 外枠
@@ -56,7 +60,7 @@ class DraggableMagnifierPointer extends Pointer {
       outerRectSize / magnification / multiplexImage.ratio,
     );
     canvas.drawImageRect(
-      multiplexImage.uiImage,
+      multiplexImage.uiImage!,
       sourceRect,
       largeRect,
       paint,

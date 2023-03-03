@@ -77,8 +77,6 @@ class MyHomePage extends ConsumerWidget {
                 return Column(
                   children: [
                     // 選択された色見本を表示
-                    // TODO iPhone実機で色見本が反映されない画像がある？具体的にはスクショ全般
-                    //  TODO 透過されて白になるものと全然違った色が表示されるものとある
                     CustomPaint(
                       size: const Size(50, 50),
                       painter: PickedPainter(color),

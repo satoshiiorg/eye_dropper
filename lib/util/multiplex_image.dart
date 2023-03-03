@@ -29,8 +29,6 @@ class MultiplexImage {
     ratio = min(widthRatio, heightRatio);
 
     // ui.Imageを設定
-    // TODO ここlateはやっぱり行儀悪いので修正した方がよいかも
-    // TODO バックグラウンドから復帰時にポインタが白くなるのもこれ関連？
     () async {
       final codec = await ui.instantiateImageCodec(bytes);
       final frameInfo = await codec.getNextFrame();
@@ -43,7 +41,7 @@ class MultiplexImage {
   /// 画像のimg.Image表現
   late final img.Image imgImage;
   /// 画像のui.Image表現
-  late final ui.Image uiImage;
+  ui.Image? uiImage;
   /// 画像の縮小率
   late final double ratio;
 }
