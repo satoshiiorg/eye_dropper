@@ -77,9 +77,12 @@ class MyHomePage extends ConsumerWidget {
                 return Column(
                   children: [
                     // 選択された色見本を表示
+                    // TODO iPhone実機で色見本が反映されない画像がある？具体的にはスクショ全般
+                    //  TODO 透過されて白になるものと全然違った色が表示されるものとある
                     CustomPaint(
                       size: const Size(50, 50),
                       painter: PickedPainter(color),
+                      // painter: pickedPainter..color = color,
                     ),
                     // 選択された色のカラーコードを表示
                     Text(color.hexTriplet()),
@@ -115,25 +118,47 @@ class MyHomePage extends ConsumerWidget {
 }
 
 /// 吸い取った色の表示領域
+@immutable
 class PickedPainter extends CustomPainter {
-  PickedPainter(this.color);
+  const PickedPainter(this.color);
 
   static const double rectSize = 50;
-  Color color;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final paint = Paint();
+    const rect = Rect.fromLTWH(0, 0, rectSize, rectSize);
+    canvas.drawRect(rect, paint);
     // 選択された色で塗りつぶした四角を表示
-    final p = Paint()
-              ..color = color
-              ..style = PaintingStyle.fill;
-    const r = Rect.fromLTWH(0, 0, rectSize, rectSize);
-    canvas.drawRect(r, p);
+    paint
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(rect, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
+  }
 }
+// class PickedPainter extends CustomPainter {
+//   static const double rectSize = 50;
+//   Color color = Colors.white;
+//
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     // 選択された色で塗りつぶした四角を表示
+//     final p = Paint()
+//       ..color = color
+//       ..style = PaintingStyle.fill;
+//     const r = Rect.fromLTWH(0, 0, rectSize, rectSize);
+//     canvas.drawRect(r, p);
+//   }
+//
+//   @override
+//   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+// }
 
 extension HexTriplet on Color {
   String hexTriplet() {
