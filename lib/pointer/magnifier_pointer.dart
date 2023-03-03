@@ -2,6 +2,8 @@ import 'package:eye_dropper/pointer/pointer.dart';
 import 'package:eye_dropper/util/multiplex_image.dart';
 import 'package:flutter/material.dart';
 
+// TODO ここを作ってもらうことを考えたらMultiplexImageを渡すのでなく
+//  ratioとuiImageを渡す方がよい？
 /// 吸い取った場所の表示領域
 /// 拡大表示を行う
 /// 拡大表示領域内をタップした場合は拡大表示領域をドラッグで移動できる

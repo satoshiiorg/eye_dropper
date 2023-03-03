@@ -9,8 +9,10 @@ class MultiplexImage {
   // MultiplexImage(this.bytes, Size size) :
   //      imgImage = img.decodeImage(bytes)! {
   MultiplexImage(this.bytes, Size size) {
+    // TODO コンストラクタが長くなってきているのでstaticメソッドに切り出す
     final pngImgImage = img.decodePng(bytes);
     if(pngImgImage == null) {
+      // TODO ファイル名渡してdecodeNamedImageを使う
       final nullableImgImage = img.decodeImage(bytes);
       if(nullableImgImage == null) {
         throw const FormatException('Unknown image format.');
@@ -19,13 +21,15 @@ class MultiplexImage {
     } else {
       // アルファ付きPNG暫定対応
       imgImage = img.decodeJpg(img.encodeJpg(pngImgImage))!;
+      // TODO アルファ付きPNGを一回ファイルに書き出してみてimageの挙動が正しいか確認
+      // imgImage = pngImgImage;
     }
 
     // 縮小比率を計算
     final widthRatio = size.width < imgImage.width ?
-    (size.width / imgImage.width) : 1.0;
+                      (size.width / imgImage.width) : 1.0;
     final heightRatio = size.height < imgImage.height ?
-    (size.height / imgImage.height) : 1.0;
+                      (size.height / imgImage.height) : 1.0;
     ratio = min(widthRatio, heightRatio);
 
     // ui.Imageを設定

@@ -101,6 +101,7 @@ class _EyeDropper extends EyeDropper {
               pickColor(pointer.position);
               _oldPosition.value = localPosition;
             },
+            // TODO GIFアニメが動いてしまう
             child: Image.memory(_multiplexImage.bytes),
           ),
           ValueListenableBuilder(
