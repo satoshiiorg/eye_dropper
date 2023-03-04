@@ -31,13 +31,6 @@ class MultiplexImage {
     final heightRatio = size.height < imgImage.height ?
                       (size.height / imgImage.height) : 1.0;
     ratio = min(widthRatio, heightRatio);
-
-    // ui.Imageを設定
-    () async {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frameInfo = await codec.getNextFrame();
-      uiImage = frameInfo.image;
-    }();
   }
 
   /// 画像のバイト列表現
@@ -45,7 +38,11 @@ class MultiplexImage {
   /// 画像のimg.Image表現
   late final img.Image imgImage;
   /// 画像のui.Image表現
-  ui.Image? uiImage;
+  Future<ui.Image> get uiImage async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frameInfo = await codec.getNextFrame();
+    return frameInfo.image;
+  }
   /// 画像の縮小率
   late final double ratio;
 }

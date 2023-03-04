@@ -1,15 +1,14 @@
+import 'dart:ui' as ui;
 import 'package:eye_dropper/pointer/pointer.dart';
-import 'package:eye_dropper/util/multiplex_image.dart';
 import 'package:flutter/material.dart';
 
-// TODO ここを作ってもらうことを考えたらMultiplexImageを渡すのでなく
-//  ratioとuiImageを渡す方がよい？
 /// 吸い取った場所の表示領域
 /// 拡大表示を行う
 /// 拡大表示領域内をタップした場合は拡大表示領域をドラッグで移動できる
 class DraggableMagnifierPointer extends Pointer {
   DraggableMagnifierPointer(
-    this.multiplexImage, {
+    this.uiImage,
+    this.ratio, {
     this.magnification = 2,
     this.outerRectSize = 91,
     this.innerRectSize = 11,
@@ -17,7 +16,9 @@ class DraggableMagnifierPointer extends Pointer {
   });
 
   /// 画像
-  final MultiplexImage multiplexImage;
+  final ui.Image uiImage;
+  /// 画像の縮小率
+  final double ratio;
   /// ポインタ部分の拡大倍率
   final double magnification;
   /// 囲みの幅
@@ -33,10 +34,6 @@ class DraggableMagnifierPointer extends Pointer {
   /// 二重の四角で囲んだ拡大画像を表示する
   @override
   Future<void> paint(Canvas canvas, Size size) async {
-    if(multiplexImage.uiImage == null) {
-      return;
-    }
-
     final paint = Paint();
 
     // 外枠
@@ -56,13 +53,13 @@ class DraggableMagnifierPointer extends Pointer {
 
     // 画像を拡大表示
     final sourceRect = Rect.fromLTWH(
-      (position.dx - (centerOffset / magnification)) / multiplexImage.ratio,
-      (position.dy - (centerOffset / magnification)) / multiplexImage.ratio,
-      outerRectSize / magnification / multiplexImage.ratio,
-      outerRectSize / magnification / multiplexImage.ratio,
+      (position.dx - (centerOffset / magnification)) / ratio,
+      (position.dy - (centerOffset / magnification)) / ratio,
+      outerRectSize / magnification / ratio,
+      outerRectSize / magnification / ratio,
     );
     canvas.drawImageRect(
-      multiplexImage.uiImage!,
+      uiImage,
       sourceRect,
       largeRect,
       paint,
