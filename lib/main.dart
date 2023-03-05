@@ -90,10 +90,11 @@ class MyHomePage extends ConsumerWidget {
             ),
             // 画像表示領域
             EyeDropper.of(
+              // TODO XFileで渡す？
               bytes: imageBytes,
               size: imageAreaSize,
-              pointerFactory: DraggableMagnifierPointer.new,
-              // pointerFactory: SimplePointer.instanceOf,
+              pointerBuilder: DraggableMagnifierPointer.new,
+              // pointerBuilder: SimplePointer.instanceOf,
               onSelected: (color) {
                 // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
                 // TODO stateを更新すると赤枠が表示されない
