@@ -128,7 +128,6 @@ class PickedPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
     const rect = Rect.fromLTWH(0, 0, rectSize, rectSize);
-    canvas.drawRect(rect, paint);
     // 選択された色で塗りつぶした四角を表示
     paint
       ..color = color
