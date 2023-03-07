@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:eye_dropper/exception/image_initialize_exception.dart';
 import 'package:eye_dropper/pointer/magnifier_pointer.dart';
 import 'package:eye_dropper/pointer/pointer.dart';
 import 'package:eye_dropper/widget/image_painter.dart';
@@ -112,7 +113,7 @@ class _EyeDropper extends EyeDropper {
               && snapshot.hasData) {
             return _mainArea();
           } else if (snapshot.hasError) {
-            throw Exception('${snapshot.error!}');
+            throw ImageInitializeException('${snapshot.error!}');
           }
           return const CircularProgressIndicator();
         },
