@@ -18,7 +18,7 @@ abstract class EyeDropper extends StatelessWidget {
     required Uint8List? bytes,
     required Size size,
     Pointer Function(ui.Image, double ratio) pointerBuilder =
-        DraggableMagnifierPointer.new,
+        MagnifierPointer.new,
     required ValueChanged<Color> onSelected,
   }) {
     // 画像が未指定の場合は空の領域を返す

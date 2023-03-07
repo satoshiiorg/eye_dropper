@@ -93,7 +93,7 @@ class MyHomePage extends ConsumerWidget {
               // TODO XFileで渡す？
               bytes: imageBytes,
               size: imageAreaSize,
-              pointerBuilder: DraggableMagnifierPointer.new,
+              pointerBuilder: MagnifierPointer.new,
               // pointerBuilder: SimplePointer.instanceOf,
               onSelected: (color) {
                 // TODO 画像によってかくつく (stateを更新しない場合は問題ない)
