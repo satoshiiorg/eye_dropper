@@ -194,10 +194,10 @@ class _EyeDropper extends EyeDropper {
 
     // 32ビットintから各チャンネルを切り出し
     final rgba = _bytesRgba.getUint32(position1d);
-    final r = rgba ~/ (256 * 256 * 256);
-    final g = rgba ~/ (256 * 256) % 256;
-    final b = rgba ~/ 256 % 256 % 256;
-    final a = rgba % 256 % 256 % 256;
+    final r = rgba >> 24;
+    final g = rgba >> 16 & 0xFF;
+    final b = rgba >> 8 & 0xFF;
+    final a = rgba & 0xFF;
     final color = Color.fromARGB(a, r, g, b);
 
     // 選択した色を渡してコールバックを呼び出す
