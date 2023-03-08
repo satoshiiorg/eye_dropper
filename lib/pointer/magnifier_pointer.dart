@@ -75,8 +75,8 @@ class MagnifierPointer extends Pointer {
     // 内枠
     final smallRect = Rect.fromLTWH(
       // 中心
-      - (strokeWidth * 2.5),
-      - (strokeWidth * 2.5),
+      - (innerRectSize / 2),
+      - (innerRectSize / 2),
       innerRectSize,
       innerRectSize,
     );
